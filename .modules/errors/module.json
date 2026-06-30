@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "name": "errors",
+    "version": "0.0.0",
+    "priority": 100
+  },
+
+  "compiler": {
+    "binary": "static-lib"
+  },
+
+  "code": {
+    "sources": ["**/*.cpp"],
+    "output": "./bin/errors",
+    "includes": ["include"]
+  },
+
+  "target": "debug"
+}

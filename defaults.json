@@ -1,0 +1,24 @@
+{
+  "compiler": {
+    "cc": "clang++",
+    "binary": "executable",
+    "objects_path": ".objs"
+  },
+
+  "targets": {
+    "release": {
+      "flags": ["-D_GNU_SOURCE"],
+      "optimization": "O3"
+    },
+
+    "debug": {
+      "flags": ["-fsanitize=address", "-g", "-D_GNU_SOURCE"],
+      "optimization": "O1"
+    },
+
+    "valgrind": {
+      "flags": ["-g", "-D_GNU_SOURCE"],
+      "optimization": "O1"
+    }
+  }
+}

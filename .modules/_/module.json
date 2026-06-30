@@ -1,0 +1,14 @@
+{
+  "metadata": {
+    "name": "_",
+    "version": "0.0.0",
+    "priority": 100
+  },
+
+  "dependencies": {
+    "errors": { "version": ">=0.0.0" }
+  },
+
+  "only-deps": true,
+  "target": "debug"
+}

@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "name": "yellowstone-core",
+    "version": "0.0.0"
+  },
+
+  "dependencies": {
+    "_": { "version": ">=0.0.0" }
+  },
+
+  "only-deps": true,
+  "defaults": "defaults.json",
+  "target": "debug",
+  "testsPath": ".tests"
+}

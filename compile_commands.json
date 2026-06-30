@@ -1,0 +1,19 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-fsanitize=address",
+      "-g",
+      "-D_GNU_SOURCE",
+      "-O1",
+      "-I./.modules/errors/include",
+      "-c",
+      "-o",
+      "./.modules/errors/.objs/modules_errors_src_errors.o",
+      "./.modules/errors/src/errors.cpp"
+    ],
+    "directory": "/home/feb/Projects/C++/yellowstone-core",
+    "file": "/home/feb/Projects/C++/yellowstone-core/.modules/errors/src/errors.cpp",
+    "output": "/home/feb/Projects/C++/yellowstone-core/.modules/errors/.objs/modules_errors_src_errors.o"
+  }
+]
