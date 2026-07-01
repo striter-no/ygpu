@@ -1,22 +1,14 @@
-#include <device.hpp>
+#include "device/config.hpp"
+#include <device/device.hpp>
 #include <exception>
 #include <iostream>
 
-#if defined(__has_feature)
-#if __has_feature(address_sanitizer)
-extern "C" const char *__lsan_default_suppressions() {
-  return "leak:libvulkan.so\n"
-         "leak:radv\n"
-         "leak:radeonsi\n";
-}
-#endif
-#endif
 
 int creation_test() {
   yst::core::DeviceConfig config;
   config.EnableDebug = true;
   config.PreferIntegratedGPU = false;
-  config.HeadlessRun = true;
+  config.PreferedBackend = yst::gpuc::BACKEND_MOCK;
 
   auto [device, error] = yst::core::CreateDevice(config);
 
