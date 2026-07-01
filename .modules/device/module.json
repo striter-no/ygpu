@@ -1,17 +1,22 @@
 {
   "metadata": {
-    "name": "errors",
+    "name": "device",
     "version": "0.0.0",
-    "priority": 1
+    "priority": 2
   },
 
   "compiler": {
     "binary": "static-lib"
   },
 
+  "dependencies": {
+    "wvulkan": { "version": ">=0.0.0" },
+    "errors": { "version": ">=0.0.0" }
+  },
+
   "code": {
     "sources": ["**/*.cpp"],
-    "output": "./bin/errors",
+    "output": "./bin/device",
     "includes": ["include"]
   },
 

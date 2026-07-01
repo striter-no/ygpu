@@ -1,0 +1,24 @@
+{
+  "metadata": {
+    "name": "example_window",
+    "version": "0.0.0",
+    "priority": 1000
+  },
+
+  "compiler": {
+    "binary": "executable"
+  },
+
+  "dependencies": {
+    "_": { "version": ">=0.0.0" }
+  },
+
+  "code": {
+    "sources": ["**/*.cpp"],
+    "output": "./bin/main",
+    "includes": ["include"],
+    "libraries": ["vulkan", "glfw"]
+  },
+
+  "target": "valgrind"
+}

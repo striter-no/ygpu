@@ -11,13 +11,13 @@
   "code": {
     "sources": ["*.cpp"],
     "includes": ["include"],
-    "output": "./bin/main"
+    "libraries": ["vulkan"]
   },
 
   "dependencies": {
-    "errors": { "version": ">=0.0.0" }
+    "_": { "version": ">=0.0.0" }
   },
 
-  "target": "debug",
+  "target": "valgrind",
   "defaults": "defaults.json"
 }

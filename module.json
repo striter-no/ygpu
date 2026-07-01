@@ -5,11 +5,12 @@
   },
 
   "dependencies": {
-    "_": { "version": ">=0.0.0" }
+    "example_device": { "version": ">=0.0.0" },
+    "example_window": { "version": ">=0.0.0" }
   },
 
   "only-deps": true,
   "defaults": "defaults.json",
-  "target": "debug",
+  "target": "valgrind",
   "testsPath": ".tests"
 }

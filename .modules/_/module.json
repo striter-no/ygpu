@@ -2,13 +2,17 @@
   "metadata": {
     "name": "_",
     "version": "0.0.0",
-    "priority": 100
+    "priority": 20
   },
 
   "dependencies": {
-    "errors": { "version": ">=0.0.0" }
+    "errors": { "version": ">=0.0.0" },
+    "wvulkan": { "version": ">=0.0.0" },
+
+    "device": { "version": ">=0.0.0" },
+    "window": { "version": ">=0.0.0" }
   },
 
   "only-deps": true,
-  "target": "debug"
+  "target": "valgrind"
 }

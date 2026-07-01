@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "name": "vulkan",
+    "name": "wvulkan",
     "version": "0.0.0",
-    "priority": 100
+    "priority": 1
   },
 
   "compiler": {
@@ -11,9 +11,9 @@
 
   "code": {
     "sources": ["**/*.cpp"],
-    "output": "./bin/vulkan",
+    "output": "./bin/wvulkan",
     "includes": ["include"]
   },
 
-  "target": "debug"
+  "target": "debug-silent"
 }

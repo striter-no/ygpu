@@ -2,7 +2,40 @@
   {
     "arguments": [
       "/usr/bin/clang++",
-      "-fsanitize=address",
+      "-g",
+      "-D_GNU_SOURCE",
+      "-w",
+      "-O1",
+      "-I./.modules/wvulkan/include",
+      "-c",
+      "-o",
+      "./.modules/wvulkan/.objs/modules_wvulkan_src_vma_impl.o",
+      "./.modules/wvulkan/src/vma_impl.cpp"
+    ],
+    "directory": "/home/feb/Projects/C++/ygpu",
+    "file": "/home/feb/Projects/C++/ygpu/.modules/wvulkan/src/vma_impl.cpp",
+    "output": "/home/feb/Projects/C++/ygpu/.modules/wvulkan/.objs/modules_wvulkan_src_vma_impl.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-g",
+      "-D_GNU_SOURCE",
+      "-w",
+      "-O1",
+      "-I./.modules/wvulkan/include",
+      "-c",
+      "-o",
+      "./.modules/wvulkan/.objs/modules_wvulkan_src_VkBootstrap.o",
+      "./.modules/wvulkan/src/VkBootstrap.cpp"
+    ],
+    "directory": "/home/feb/Projects/C++/ygpu",
+    "file": "/home/feb/Projects/C++/ygpu/.modules/wvulkan/src/VkBootstrap.cpp",
+    "output": "/home/feb/Projects/C++/ygpu/.modules/wvulkan/.objs/modules_wvulkan_src_VkBootstrap.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang++",
       "-g",
       "-D_GNU_SOURCE",
       "-O1",
@@ -12,8 +45,64 @@
       "./.modules/errors/.objs/modules_errors_src_errors.o",
       "./.modules/errors/src/errors.cpp"
     ],
-    "directory": "/home/feb/Projects/C++/yellowstone-core",
-    "file": "/home/feb/Projects/C++/yellowstone-core/.modules/errors/src/errors.cpp",
-    "output": "/home/feb/Projects/C++/yellowstone-core/.modules/errors/.objs/modules_errors_src_errors.o"
+    "directory": "/home/feb/Projects/C++/ygpu",
+    "file": "/home/feb/Projects/C++/ygpu/.modules/errors/src/errors.cpp",
+    "output": "/home/feb/Projects/C++/ygpu/.modules/errors/.objs/modules_errors_src_errors.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-g",
+      "-D_GNU_SOURCE",
+      "-O1",
+      "-I./.modules/window/include",
+      "-I./.modules/window/../errors/include",
+      "-c",
+      "-o",
+      "./.modules/window/.objs/modules_window_src_window.o",
+      "./.modules/window/src/window.cpp"
+    ],
+    "directory": "/home/feb/Projects/C++/ygpu",
+    "file": "/home/feb/Projects/C++/ygpu/.modules/window/src/window.cpp",
+    "output": "/home/feb/Projects/C++/ygpu/.modules/window/.objs/modules_window_src_window.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-g",
+      "-D_GNU_SOURCE",
+      "-O1",
+      "-I./.modules/device/include",
+      "-I./.modules/device/../errors/include",
+      "-I./.modules/device/../wvulkan/include",
+      "-c",
+      "-o",
+      "./.modules/device/.objs/modules_device_src_device.o",
+      "./.modules/device/src/device.cpp"
+    ],
+    "directory": "/home/feb/Projects/C++/ygpu",
+    "file": "/home/feb/Projects/C++/ygpu/.modules/device/src/device.cpp",
+    "output": "/home/feb/Projects/C++/ygpu/.modules/device/.objs/modules_device_src_device.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-g",
+      "-D_GNU_SOURCE",
+      "-O1",
+      "-I./.modules/example_device/include",
+      "-I./.modules/example_device/../_/include",
+      "-I./.modules/example_device/../device/include",
+      "-I./.modules/example_device/../window/include",
+      "-I./.modules/example_device/../errors/include",
+      "-I./.modules/example_device/../wvulkan/include",
+      "-c",
+      "-o",
+      "./.modules/example_device/.objs/modules_example_device_main.o",
+      "./.modules/example_device/main.cpp"
+    ],
+    "directory": "/home/feb/Projects/C++/ygpu",
+    "file": "/home/feb/Projects/C++/ygpu/.modules/example_device/main.cpp",
+    "output": "/home/feb/Projects/C++/ygpu/.modules/example_device/.objs/modules_example_device_main.o"
   }
 ]

@@ -1,21 +1,19 @@
 {
   "metadata": {
-    "name": "examples/triangle",
+    "name": "pipeline",
     "version": "0.0.0",
     "priority": 100
   },
 
   "compiler": {
-    "binary": "executable"
+    "binary": "static-lib"
   },
-
-  "dependencies": {},
 
   "code": {
     "sources": ["**/*.cpp"],
-    "output": "./bin/main",
+    "output": "./bin/pipeline",
     "includes": ["include"]
   },
 
-  "target": "debug"
+  "target": "valgrind"
 }
