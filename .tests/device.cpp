@@ -3,12 +3,11 @@
 #include <exception>
 #include <iostream>
 
-
 int creation_test() {
   yst::core::DeviceConfig config;
   config.EnableDebug = true;
   config.PreferIntegratedGPU = false;
-  config.PreferedBackend = yst::gpuc::BACKEND_MOCK;
+  config.PreferedBackend = yst::gpuc::BACKEND_VULKAN;
 
   auto [device, error] = yst::core::CreateDevice(config);
 

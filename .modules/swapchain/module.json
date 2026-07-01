@@ -1,0 +1,25 @@
+{
+  "metadata": {
+    "name": "swapchain",
+    "version": "0.0.0",
+    "priority": 2
+  },
+
+  "compiler": {
+    "binary": "static-lib"
+  },
+
+  "dependencies": {
+    "window": { "version": ">=0.0.0" },
+    "device": { "version": ">=0.0.0" },
+    "command": { "version": ">=0.0.0" }
+  },
+
+  "code": {
+    "sources": ["**/*.cpp"],
+    "output": "./bin/swapchain",
+    "includes": ["include"]
+  },
+
+  "target": "valgrind"
+}

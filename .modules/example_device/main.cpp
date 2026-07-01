@@ -1,6 +1,6 @@
-#include <iostream>
-#include <device.hpp>
+#include <device/device.hpp>
 #include <exception>
+#include <iostream>
 
 int creation_test() {
     yst::core::DeviceConfig config;
@@ -14,7 +14,8 @@ int creation_test() {
         return -1;
     }
 
-    std::cout << "GPU Name: " << device.vkbDevice.physical_device.name << std::endl;
+    std::cout << "GPU Name: " << device.vkbDevice.physical_device.name
+              << std::endl;
     return 0;
 }
 

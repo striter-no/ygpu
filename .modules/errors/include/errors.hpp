@@ -2,30 +2,26 @@
 #include <string>
 
 namespace yst {
-    class CustomError {
-        std::string message;
-        int code;
+class CustomError {
+    std::string message;
 
-        public:
-            [[nodiscard]] std::string str() const;
+   public:
+    int code;
 
-            explicit operator bool() const {
-                return code != 0;
-            }
+    [[nodiscard]] std::string str() const;
 
-            CustomError(
-                int code,
-                const std::string &message
-            ): code(code), message(message) {}
+    explicit operator bool() const { return code != 0; }
 
-            CustomError():
-                code(0), message("") {}
+    CustomError(int code, const std::string& message)
+        : code(code), message(message) {}
 
-            static CustomError Unknown() {
-                return CustomError(-1, "Something went wrong");
-            }
+    CustomError() : code(0), message("") {}
 
-            ~CustomError() = default;
-    };
+    static CustomError Unknown() {
+        return CustomError(-1, "Something went wrong");
+    }
 
-}
+    ~CustomError() = default;
+};
+
+}  // namespace yst

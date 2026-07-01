@@ -10,10 +10,10 @@
   },
 
   "code": {
-    "sources": ["**/*.cpp"],
+    "sources": ["**/*.c"],
     "output": "./bin/pipeline",
     "includes": ["include"]
   },
 
-  "target": "valgrind"
+  "target": "debug"
 }

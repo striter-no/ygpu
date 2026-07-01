@@ -10,6 +10,9 @@
     "wvulkan": { "version": ">=0.0.0" },
 
     "device": { "version": ">=0.0.0" },
+    "swapchain": { "version": ">=0.0.0" },
+    "buffer": { "version": ">=0.0.0" },
+    "command": { "version": ">=0.0.0" },
     "window": { "version": ">=0.0.0" }
   },
 

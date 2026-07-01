@@ -1,17 +1,21 @@
 {
   "metadata": {
-    "name": "gpumem",
+    "name": "command",
     "version": "0.0.0",
-    "priority": 100
+    "priority": 2
   },
 
   "compiler": {
     "binary": "static-lib"
   },
 
+  "dependencies": {
+    "device": { "version": ">=0.0.0" }
+  },
+
   "code": {
     "sources": ["**/*.cpp"],
-    "output": "./bin/gpumem",
+    "output": "./bin/command",
     "includes": ["include"]
   },
 
