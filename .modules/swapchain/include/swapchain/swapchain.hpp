@@ -36,8 +36,17 @@ private:
     VkRenderPass renderPass = VK_NULL_HANDLE;
     std::vector<VkFramebuffer> framebuffers;
 
+    /// Set when AcquireNextFrame / Present encounters VK_ERROR_OUT_OF_DATE
+    /// or VK_SUBOPTIMAL_KHR. Caller is expected to check NeedsRecreate() and
+    /// call Recreate(). Replaces the historical empty-branch-on-suboptimal
+    /// "for simplicity" stub.
+    bool needsRecreate_ = false;
+
     void Cleanup();
     CustomError CreateFramebuffers();
+    CustomError CreateRenderPass();
+    CustomError BuildSwapchain(int width, int height,
+        const yst::ywin::Window& window, bool useOldSwapchain);
 
 public:
     Swapchain() = default;
@@ -52,6 +61,11 @@ public:
         const yst::ywin::Window& window);
     CustomError Present(CommandList& cmd);
     CustomError Recreate(const yst::ywin::Window& window);
+
+    /// True if the most recent Acquire/Present returned OUT_OF_DATE or
+    /// SUBOPTIMAL and the swapchain should be recreated before the next
+    /// frame. Cleared by a successful Recreate().
+    bool NeedsRecreate() const noexcept { return needsRecreate_; }
 
     friend std::pair<Swapchain, CustomError> CreateSwapchain(
         Device& device, const yst::ywin::Window& window,

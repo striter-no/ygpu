@@ -4,6 +4,8 @@
 #include <vulkan/vulkan.h>
 
 #include <errors.hpp>
+#include <string>
+#include <vector>
 
 #include "config.hpp"
 
@@ -18,10 +20,6 @@ public:
     uint32_t GraphicsQueueFamily = 0;
     VmaAllocator Allocator = VK_NULL_HANDLE;
 
-    VkSwapchainKHR Swapchain = VK_NULL_HANDLE;
-    vkb::Swapchain vkbSwapchain;
-    std::vector<VkImage> SwapchainImages;
-
     vkb::Instance vkbInstance;
     vkb::Device vkbDevice;
 
@@ -32,46 +30,25 @@ public:
     Device(const Device&) = delete;
     Device& operator=(const Device&) = delete;
 
-    Device(Device&& other) noexcept
-    {
-        Instance = other.Instance;
-        PhysicalDevice = other.PhysicalDevice;
-        LogicalDevice = other.LogicalDevice;
-        GraphicsQueue = other.GraphicsQueue;
-        GraphicsQueueFamily = other.GraphicsQueueFamily;
-        Allocator = other.Allocator;
-        vkbInstance = other.vkbInstance;
-        vkbDevice = other.vkbDevice;
+    Device(Device&& other) noexcept;
+    Device& operator=(Device&& other) noexcept;
 
-        other.Instance = VK_NULL_HANDLE;
-        other.LogicalDevice = VK_NULL_HANDLE;
-        other.Allocator = VK_NULL_HANDLE;
-    }
+    /// Human-readable name of the selected physical GPU.
+    /// Empty if the device was never successfully created.
+    std::string GetDeviceName() const;
 
-    Device& operator=(Device&& other) noexcept
-    {
-        if (this == &other) {
-            return *this;
-        }
-        Destroy();
-
-        Instance = other.Instance;
-        PhysicalDevice = other.PhysicalDevice;
-        LogicalDevice = other.LogicalDevice;
-        GraphicsQueue = other.GraphicsQueue;
-        GraphicsQueueFamily = other.GraphicsQueueFamily;
-        Allocator = other.Allocator;
-        vkbInstance = other.vkbInstance;
-        vkbDevice = other.vkbDevice;
-
-        other.Instance = VK_NULL_HANDLE;
-        other.LogicalDevice = VK_NULL_HANDLE;
-        other.Allocator = VK_NULL_HANDLE;
-
-        return *this;
-    }
+    /// The Vulkan API version actually negotiated with the driver
+    /// (may be >= DeviceConfig::MinVulkanVersion).
+    yst::gpuc::ApiVersion GetActiveApiVersion() const;
 };
 
 std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config);
+
+/// Convenience overload (Layer 0): create a device with the DEFAULT_CONFIG
+/// preset. Equivalent to `CreateDevice(CreateConfig(gpuc::DEFAULT_CONFIG))`.
+inline std::pair<Device, CustomError> CreateDevice()
+{
+    return CreateDevice(CreateConfig(yst::gpuc::DEFAULT_CONFIG));
+}
 
 } // namespace yst::core
