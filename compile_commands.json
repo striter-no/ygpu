@@ -105,7 +105,6 @@
   {
     "arguments": [
       "/usr/bin/clang++",
-      "-fsanitize=address",
       "-g",
       "-D_GNU_SOURCE",
       "-O1",
@@ -185,7 +184,27 @@
       "-g",
       "-D_GNU_SOURCE",
       "-O1",
+      "-I./.modules/pipeline/include",
+      "-I./.modules/pipeline/../device/include",
+      "-I./.modules/pipeline/../errors/include",
+      "-I./.modules/pipeline/../wvulkan/include",
+      "-c",
+      "-o",
+      "./.modules/pipeline/.objs/modules_pipeline_src_pipeline.o",
+      "./.modules/pipeline/src/pipeline.cpp"
+    ],
+    "directory": "/home/feb/Projects/C++/ygpu",
+    "file": "/home/feb/Projects/C++/ygpu/.modules/pipeline/src/pipeline.cpp",
+    "output": "/home/feb/Projects/C++/ygpu/.modules/pipeline/.objs/modules_pipeline_src_pipeline.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-g",
+      "-D_GNU_SOURCE",
+      "-O1",
       "-I./.modules/example_window/include",
+      "-I./.modules/example_window/../pipeline/include",
       "-I./.modules/example_window/../_/include",
       "-I./.modules/example_window/../device/include",
       "-I./.modules/example_window/../swapchain/include",
@@ -210,6 +229,7 @@
       "-D_GNU_SOURCE",
       "-O1",
       "-I./.modules/example_device/include",
+      "-I./.modules/example_device/../pipeline/include",
       "-I./.modules/example_device/../_/include",
       "-I./.modules/example_device/../device/include",
       "-I./.modules/example_device/../swapchain/include",

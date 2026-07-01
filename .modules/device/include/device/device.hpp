@@ -10,7 +10,7 @@
 namespace yst::core {
 
 class Device {
-   public:
+public:
     VkInstance Instance = VK_NULL_HANDLE;
     VkPhysicalDevice PhysicalDevice = VK_NULL_HANDLE;
     VkDevice LogicalDevice = VK_NULL_HANDLE;
@@ -32,7 +32,8 @@ class Device {
     Device(const Device&) = delete;
     Device& operator=(const Device&) = delete;
 
-    Device(Device&& other) noexcept {
+    Device(Device&& other) noexcept
+    {
         Instance = other.Instance;
         PhysicalDevice = other.PhysicalDevice;
         LogicalDevice = other.LogicalDevice;
@@ -47,7 +48,8 @@ class Device {
         other.Allocator = VK_NULL_HANDLE;
     }
 
-    Device& operator=(Device&& other) noexcept {
+    Device& operator=(Device&& other) noexcept
+    {
         if (this == &other) {
             return *this;
         }
@@ -72,4 +74,4 @@ class Device {
 
 std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config);
 
-}  // namespace yst::core
+} // namespace yst::core

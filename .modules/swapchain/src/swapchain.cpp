@@ -1,12 +1,15 @@
 #include "swapchain/swapchain.hpp"
 
+#include <GLFW/glfw3.h>
+
 #include "device/device.hpp"
 #include "errors.hpp"
 
 namespace yst::core {
 
 CustomError InitFrames(Device* device, std::vector<FrameData>& frames,
-                       uint32_t count) {
+    uint32_t count)
+{
     frames.resize(count);
 
     VkSemaphoreCreateInfo semaphoreInfo = {};
@@ -18,18 +21,21 @@ CustomError InitFrames(Device* device, std::vector<FrameData>& frames,
 
     for (uint32_t i = 0; i < count; i++) {
         auto [pool, poolErr] = CreateCommandPool(*device);
-        if (poolErr) return poolErr;
+        if (poolErr)
+            return poolErr;
         frames[i].CommandPool = pool;
 
         auto [cmd, cmdErr] = AllocateCommandList(*device, pool);
-        if (cmdErr) return cmdErr;
+        if (cmdErr)
+            return cmdErr;
         frames[i].CmdList = cmd;
 
         if (vkCreateSemaphore(device->LogicalDevice, &semaphoreInfo, nullptr,
-                              &frames[i].ImageAvailableSemaphore) !=
-                VK_SUCCESS ||
-            vkCreateFence(device->LogicalDevice, &fenceInfo, nullptr,
-                          &frames[i].RenderInFlightFence) != VK_SUCCESS) {
+                &frames[i].ImageAvailableSemaphore)
+                != VK_SUCCESS
+            || vkCreateFence(device->LogicalDevice, &fenceInfo, nullptr,
+                   &frames[i].RenderInFlightFence)
+                != VK_SUCCESS) {
             return CustomError(32, "Failed to create sync objects");
         }
     }
@@ -37,49 +43,57 @@ CustomError InitFrames(Device* device, std::vector<FrameData>& frames,
 }
 
 std::pair<Swapchain, CustomError> CreateSwapchain(
-    Device& device, const yst::ywin::Window& window, SwapchainConfig config) {
+    Device& device, const yst::ywin::Window& window, SwapchainConfig config)
+{
     Swapchain out;
     out.device = &device;
     out.config = config;
 
     out.surface = window.GetSurface(device.Instance);
     if (!out.surface)
-        return {std::move(out), CustomError(20, "Failed to create Surface")};
+        return { std::move(out), CustomError(20, "Failed to create Surface") };
 
     VkBool32 presentSupport = false;
     vkGetPhysicalDeviceSurfaceSupportKHR(device.PhysicalDevice,
-                                         device.GraphicsQueueFamily,
-                                         out.surface, &presentSupport);
+        device.GraphicsQueueFamily,
+        out.surface, &presentSupport);
     if (!presentSupport)
-        return {std::move(out),
-                CustomError(29,
-                            "Selected GPU queue does not support presenting to "
-                            "this window!")};
+        return { std::move(out),
+            CustomError(29,
+                "Selected GPU queue does not support presenting to "
+                "this window!") };
 
-    vkb::SwapchainBuilder builder{device.PhysicalDevice, device.LogicalDevice,
-                                  out.surface, device.GraphicsQueueFamily,
-                                  device.GraphicsQueueFamily};
+    vkb::SwapchainBuilder builder { device.PhysicalDevice, device.LogicalDevice,
+        out.surface, device.GraphicsQueueFamily,
+        device.GraphicsQueueFamily };
+
+    int width = 0, height = 0;
+    glfwGetFramebufferSize(window.GetHandle(), &width, &height);
+
+    while (width == 0 || height == 0)
+        glfwGetFramebufferSize(window.GetHandle(), &width, &height);
 
     auto swap_ret = builder.set_desired_present_mode(config.PresentMode)
-                        .set_desired_format({config.PreferredFormat,
-                                             config.PreferredColorSpace})
+                        .set_desired_format({ config.PreferredFormat,
+                            config.PreferredColorSpace })
+                        .set_desired_extent(width, height)
                         .build();
 
     if (!swap_ret)
-        return {std::move(out), CustomError(21, "Failed to build Swapchain")};
+        return { std::move(out), CustomError(21, "Failed to build Swapchain") };
 
     out.vkbSwapchain = swap_ret.value();
     out.images = out.vkbSwapchain.get_images().value();
     out.imageViews = out.vkbSwapchain.get_image_views().value();
 
     out.imagePresentationSemaphores.resize(out.images.size());
-    VkSemaphoreCreateInfo semInfo{VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
+    VkSemaphoreCreateInfo semInfo { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
     for (size_t i = 0; i < out.images.size(); i++) {
         vkCreateSemaphore(device.LogicalDevice, &semInfo, nullptr,
-                          &out.imagePresentationSemaphores[i]);
+            &out.imagePresentationSemaphores[i]);
     }
 
-    VkAttachmentDescription colorAttachment{};
+    VkAttachmentDescription colorAttachment {};
     colorAttachment.format = out.vkbSwapchain.image_format;
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -89,16 +103,16 @@ std::pair<Swapchain, CustomError> CreateSwapchain(
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-    VkAttachmentReference colorAttachmentRef{};
+    VkAttachmentReference colorAttachmentRef {};
     colorAttachmentRef.attachment = 0;
     colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkSubpassDescription subpass{};
+    VkSubpassDescription subpass {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
 
-    VkSubpassDependency dependency{};
+    VkSubpassDependency dependency {};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     dependency.dstSubpass = 0;
     dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -106,7 +120,7 @@ std::pair<Swapchain, CustomError> CreateSwapchain(
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-    VkRenderPassCreateInfo renderPassInfo{};
+    VkRenderPassCreateInfo renderPassInfo {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = 1;
     renderPassInfo.pAttachments = &colorAttachment;
@@ -116,36 +130,38 @@ std::pair<Swapchain, CustomError> CreateSwapchain(
     renderPassInfo.pDependencies = &dependency;
 
     if (vkCreateRenderPass(device.LogicalDevice, &renderPassInfo, nullptr,
-                           &out.renderPass) != VK_SUCCESS) {
-        return {std::move(out),
-                CustomError(27, "Failed to create render pass")};
+            &out.renderPass)
+        != VK_SUCCESS) {
+        return { std::move(out),
+            CustomError(27, "Failed to create render pass") };
     }
 
-    if (auto err = out.CreateFramebuffers()) return {std::move(out), err};
+    if (auto err = out.CreateFramebuffers())
+        return { std::move(out), err };
     if (auto err = InitFrames(&device, out.frames, config.MaxFramesInFlight))
-        return {std::move(out), err};
+        return { std::move(out), err };
 
-    return {std::move(out), CustomError()};
+    return { std::move(out), CustomError() };
 }
 
 std::pair<CommandList, CustomError> Swapchain::AcquireNextFrame(
-    const yst::ywin::Window& window) {
+    const yst::ywin::Window& window)
+{
     FrameData& currentFrame = frames[currentFrameIndex];
 
     vkWaitForFences(device->LogicalDevice, 1, &currentFrame.RenderInFlightFence,
-                    VK_TRUE, UINT64_MAX);
+        VK_TRUE, UINT64_MAX);
 
-    VkResult result =
-        vkAcquireNextImageKHR(device->LogicalDevice, vkbSwapchain.swapchain,
-                              UINT64_MAX, currentFrame.ImageAvailableSemaphore,
-                              VK_NULL_HANDLE, &currentImageIndex);
+    VkResult result = vkAcquireNextImageKHR(device->LogicalDevice, vkbSwapchain.swapchain,
+        UINT64_MAX, currentFrame.ImageAvailableSemaphore,
+        VK_NULL_HANDLE, &currentImageIndex);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        return {CommandList{},
-                CustomError(VK_ERROR_OUT_OF_DATE_KHR, "Out of date")};
+        return { CommandList {},
+            CustomError(VK_ERROR_OUT_OF_DATE_KHR, "Out of date") };
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-        return {CommandList{},
-                CustomError(22, "Failed to acquire swapchain image")};
+        return { CommandList {},
+            CustomError(22, "Failed to acquire swapchain image") };
     }
 
     vkResetFences(device->LogicalDevice, 1, &currentFrame.RenderInFlightFence);
@@ -154,10 +170,11 @@ std::pair<CommandList, CustomError> Swapchain::AcquireNextFrame(
     currentFrame.CmdList.Begin();
     currentFrame.CmdList.imageIndex = currentImageIndex;
 
-    return {currentFrame.CmdList, CustomError()};
+    return { currentFrame.CmdList, CustomError() };
 }
 
-CustomError Swapchain::Present(CommandList& cmd) {
+CustomError Swapchain::Present(CommandList& cmd)
+{
     FrameData& currentFrame = frames[currentFrameIndex];
 
     cmd.End();
@@ -165,9 +182,10 @@ CustomError Swapchain::Present(CommandList& cmd) {
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore waitSemaphores[] = {currentFrame.ImageAvailableSemaphore};
+    VkSemaphore waitSemaphores[] = { currentFrame.ImageAvailableSemaphore };
     VkPipelineStageFlags waitStages[] = {
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+    };
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStages;
@@ -176,12 +194,14 @@ CustomError Swapchain::Present(CommandList& cmd) {
     submitInfo.pCommandBuffers = &cmd.buffer;
 
     VkSemaphore signalSemaphores[] = {
-        imagePresentationSemaphores[currentImageIndex]};
+        imagePresentationSemaphores[currentImageIndex]
+    };
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
     if (vkQueueSubmit(device->GraphicsQueue, 1, &submitInfo,
-                      currentFrame.RenderInFlightFence) != VK_SUCCESS) {
+            currentFrame.RenderInFlightFence)
+        != VK_SUCCESS) {
         return CustomError(25, "Failed to submit draw command buffer");
     }
 
@@ -190,7 +210,7 @@ CustomError Swapchain::Present(CommandList& cmd) {
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = signalSemaphores;
 
-    VkSwapchainKHR swapchains[] = {vkbSwapchain.swapchain};
+    VkSwapchainKHR swapchains[] = { vkbSwapchain.swapchain };
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapchains;
     presentInfo.pImageIndices = &currentImageIndex;
@@ -205,12 +225,13 @@ CustomError Swapchain::Present(CommandList& cmd) {
     return CustomError();
 }
 
-CustomError Swapchain::CreateFramebuffers() {
+CustomError Swapchain::CreateFramebuffers()
+{
     framebuffers.resize(imageViews.size());
     for (size_t i = 0; i < imageViews.size(); i++) {
-        VkImageView attachments[] = {imageViews[i]};
+        VkImageView attachments[] = { imageViews[i] };
 
-        VkFramebufferCreateInfo framebufferInfo{};
+        VkFramebufferCreateInfo framebufferInfo {};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass = renderPass;
         framebufferInfo.attachmentCount = 1;
@@ -220,28 +241,31 @@ CustomError Swapchain::CreateFramebuffers() {
         framebufferInfo.layers = 1;
 
         if (vkCreateFramebuffer(device->LogicalDevice, &framebufferInfo,
-                                nullptr, &framebuffers[i]) != VK_SUCCESS) {
+                nullptr, &framebuffers[i])
+            != VK_SUCCESS) {
             return CustomError(28, "Failed to create framebuffer");
         }
     }
     return CustomError();
 }
 
-void Swapchain::Cleanup() {
-    if (!device || device->LogicalDevice == VK_NULL_HANDLE) return;
+void Swapchain::Cleanup()
+{
+    if (!device || device->LogicalDevice == VK_NULL_HANDLE)
+        return;
 
     vkDeviceWaitIdle(device->LogicalDevice);
 
     for (auto& frame : frames) {
         if (frame.RenderInFlightFence)
             vkDestroyFence(device->LogicalDevice, frame.RenderInFlightFence,
-                           nullptr);
+                nullptr);
         if (frame.ImageAvailableSemaphore)
             vkDestroySemaphore(device->LogicalDevice,
-                               frame.ImageAvailableSemaphore, nullptr);
+                frame.ImageAvailableSemaphore, nullptr);
         if (frame.CommandPool)
             vkDestroyCommandPool(device->LogicalDevice, frame.CommandPool,
-                                 nullptr);
+                nullptr);
     }
     frames.clear();
 
@@ -277,7 +301,8 @@ void Swapchain::Cleanup() {
 
 Swapchain::~Swapchain() { Cleanup(); }
 
-Swapchain::Swapchain(Swapchain&& other) noexcept {
+Swapchain::Swapchain(Swapchain&& other) noexcept
+{
     device = other.device;
     config = other.config;
     surface = other.surface;
@@ -300,7 +325,8 @@ Swapchain::Swapchain(Swapchain&& other) noexcept {
     other.framebuffers.clear();
 }
 
-Swapchain& Swapchain::operator=(Swapchain&& other) noexcept {
+Swapchain& Swapchain::operator=(Swapchain&& other) noexcept
+{
     if (this != &other) {
         Cleanup();
         device = other.device;
@@ -312,8 +338,7 @@ Swapchain& Swapchain::operator=(Swapchain&& other) noexcept {
         frames = std::move(other.frames);
         currentFrameIndex = other.currentFrameIndex;
         currentImageIndex = other.currentImageIndex;
-        imagePresentationSemaphores =
-            std::move(other.imagePresentationSemaphores);
+        imagePresentationSemaphores = std::move(other.imagePresentationSemaphores);
         renderPass = other.renderPass;
         framebuffers = std::move(other.framebuffers);
 
@@ -329,15 +354,23 @@ Swapchain& Swapchain::operator=(Swapchain&& other) noexcept {
 }
 
 VkRenderPass Swapchain::GetRenderPass() const { return renderPass; }
-VkFramebuffer Swapchain::GetCurrentFramebuffer() const {
+VkFramebuffer Swapchain::GetCurrentFramebuffer() const
+{
     return framebuffers[currentImageIndex];
 }
 VkExtent2D Swapchain::GetExtent() const { return vkbSwapchain.extent; }
 
-CustomError Swapchain::Recreate(const yst::ywin::Window& window) {
-    if (!device) return CustomError(40, "Invalid device in swapchain");
+CustomError Swapchain::Recreate(const yst::ywin::Window& window)
+{
+    if (!device)
+        return CustomError(40, "Invalid device in swapchain");
 
-    while (window.IsMinimized()) window.WaitEvents();
+    int width = 0, height = 0;
+    glfwGetFramebufferSize(window.GetHandle(), &width, &height);
+    while (width == 0 || height == 0) {
+        glfwGetFramebufferSize(window.GetHandle(), &width, &height);
+        window.WaitEvents();
+    }
 
     vkDeviceWaitIdle(device->LogicalDevice);
 
@@ -345,17 +378,19 @@ CustomError Swapchain::Recreate(const yst::ywin::Window& window) {
         vkDestroyFramebuffer(device->LogicalDevice, fb, nullptr);
     framebuffers.clear();
 
-    vkb::SwapchainBuilder builder{device->PhysicalDevice, device->LogicalDevice,
-                                  surface, device->GraphicsQueueFamily,
-                                  device->GraphicsQueueFamily};
+    vkb::SwapchainBuilder builder { device->PhysicalDevice, device->LogicalDevice,
+        surface, device->GraphicsQueueFamily,
+        device->GraphicsQueueFamily };
 
     auto swap_ret = builder.set_desired_present_mode(config.PresentMode)
-                        .set_desired_format({config.PreferredFormat,
-                                             config.PreferredColorSpace})
+                        .set_desired_format({ config.PreferredFormat,
+                            config.PreferredColorSpace })
+                        .set_desired_extent(width, height)
                         .set_old_swapchain(vkbSwapchain)
                         .build();
 
-    if (!swap_ret) return CustomError(41, "Failed to rebuild swapchain");
+    if (!swap_ret)
+        return CustomError(41, "Failed to rebuild swapchain");
 
     for (auto imageView : imageViews)
         vkDestroyImageView(device->LogicalDevice, imageView, nullptr);
@@ -372,14 +407,15 @@ CustomError Swapchain::Recreate(const yst::ywin::Window& window) {
     imageViews = vkbSwapchain.get_image_views().value();
 
     imagePresentationSemaphores.resize(images.size());
-    VkSemaphoreCreateInfo semInfo{VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
+    VkSemaphoreCreateInfo semInfo { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
     for (size_t i = 0; i < images.size(); i++) {
         vkCreateSemaphore(device->LogicalDevice, &semInfo, nullptr,
-                          &imagePresentationSemaphores[i]);
+            &imagePresentationSemaphores[i]);
     }
 
-    if (auto err = CreateFramebuffers()) return err;
+    if (auto err = CreateFramebuffers())
+        return err;
     return CustomError();
 }
 
-}  // namespace yst::core
+} // namespace yst::core

@@ -9,17 +9,20 @@ struct GLFWwindow;
 
 namespace yst::ywin {
 class Window {
-   private:
-    bool isResized;
+private:
+    bool isResized = false;
 
     GLFWwindow* handle = nullptr;
     mutable VkSurfaceKHR cachedSurface = VK_NULL_HANDLE;
 
-    explicit Window(GLFWwindow* ptr) : handle(ptr) {}
+    explicit Window(GLFWwindow* ptr)
+        : handle(ptr)
+    {
+    }
     friend std::pair<Window, CustomError> CreateWindow(
         const WindowConfig& config);
 
-   public:
+public:
     Window() = default;
     ~Window();
 
@@ -45,4 +48,4 @@ class Window {
 };
 
 std::pair<Window, CustomError> CreateWindow(const WindowConfig& config);
-}  // namespace yst::ywin
+} // namespace yst::ywin

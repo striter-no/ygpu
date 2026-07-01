@@ -1,7 +1,8 @@
 #include "device/config.hpp"
 
 namespace yst::core {
-DeviceConfig CreateConfig(yst::gpuc::Preset preset) {
+DeviceConfig CreateConfig(yst::gpuc::Preset preset)
+{
     DeviceConfig config;
     if (preset == gpuc::DEFAULT_CONFIG) {
         config.PreferIntegratedGPU = false;
@@ -12,4 +13,4 @@ DeviceConfig CreateConfig(yst::gpuc::Preset preset) {
     }
     return config;
 }
-}  // namespace yst::core
+} // namespace yst::core

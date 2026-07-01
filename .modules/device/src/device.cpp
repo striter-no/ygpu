@@ -4,7 +4,8 @@
 
 namespace yst::core {
 
-std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config) {
+std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config)
+{
     Device outDevice;
 
     // 1. Vulkan init
@@ -15,19 +16,18 @@ std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config) {
                         .build();
 
     if (!inst_ret) {
-        return {std::move(outDevice),
-                CustomError(1, "Failed to create Vulkan Instance: " +
-                                   inst_ret.error().message())};
+        return { std::move(outDevice),
+            CustomError(1, "Failed to create Vulkan Instance: " + inst_ret.error().message()) };
     }
     outDevice.vkbInstance = inst_ret.value();
     outDevice.Instance = outDevice.vkbInstance.instance;
 
     // 2. Physical device
-    vkb::PhysicalDeviceSelector selector{outDevice.vkbInstance};
+    vkb::PhysicalDeviceSelector selector { outDevice.vkbInstance };
 
     auto gpuPreference = config.PreferIntegratedGPU
-                             ? vkb::PreferredDeviceType::integrated
-                             : vkb::PreferredDeviceType::discrete;
+        ? vkb::PreferredDeviceType::integrated
+        : vkb::PreferredDeviceType::discrete;
 
     auto phys_ret = selector.set_minimum_version(1, 2)
                         .prefer_gpu_device_type(gpuPreference)
@@ -36,32 +36,28 @@ std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config) {
                         .select();
 
     if (!phys_ret) {
-        return {std::move(outDevice),
-                CustomError(2, "Failed to select physical device: " +
-                                   phys_ret.error().message())};
+        return { std::move(outDevice),
+            CustomError(2, "Failed to select physical device: " + phys_ret.error().message()) };
     }
     vkb::PhysicalDevice physicalDevice = phys_ret.value();
     outDevice.PhysicalDevice = physicalDevice.physical_device;
 
-    vkb::DeviceBuilder deviceBuilder{physicalDevice};
+    vkb::DeviceBuilder deviceBuilder { physicalDevice };
     auto dev_ret = deviceBuilder.build();
 
     if (!dev_ret) {
-        return {std::move(outDevice),
-                CustomError(3, "Failed to create logical device: " +
-                                   dev_ret.error().message())};
+        return { std::move(outDevice),
+            CustomError(3, "Failed to create logical device: " + dev_ret.error().message()) };
     }
     outDevice.vkbDevice = dev_ret.value();
     outDevice.LogicalDevice = outDevice.vkbDevice.device;
 
-    auto graphicsQueue_ret =
-        outDevice.vkbDevice.get_queue(vkb::QueueType::graphics);
-    auto graphicsQueueFam_ret =
-        outDevice.vkbDevice.get_queue_index(vkb::QueueType::graphics);
+    auto graphicsQueue_ret = outDevice.vkbDevice.get_queue(vkb::QueueType::graphics);
+    auto graphicsQueueFam_ret = outDevice.vkbDevice.get_queue_index(vkb::QueueType::graphics);
 
     if (!graphicsQueue_ret || !graphicsQueueFam_ret) {
-        return {std::move(outDevice),
-                CustomError(4, "Failed to get graphics queue")};
+        return { std::move(outDevice),
+            CustomError(4, "Failed to get graphics queue") };
     }
     outDevice.GraphicsQueue = graphicsQueue_ret.value();
     outDevice.GraphicsQueueFamily = graphicsQueueFam_ret.value();
@@ -72,18 +68,18 @@ std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config) {
     allocatorInfo.device = outDevice.LogicalDevice;
     allocatorInfo.instance = outDevice.Instance;
 
-    allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_2;
+    allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_0;
 
-    if (vmaCreateAllocator(&allocatorInfo, &outDevice.Allocator) !=
-        VK_SUCCESS) {
-        return {std::move(outDevice),
-                CustomError(5, "Failed to create VMA Allocator")};
+    if (vmaCreateAllocator(&allocatorInfo, &outDevice.Allocator) != VK_SUCCESS) {
+        return { std::move(outDevice),
+            CustomError(5, "Failed to create VMA Allocator") };
     }
 
-    return {std::move(outDevice), CustomError()};
+    return { std::move(outDevice), CustomError() };
 }
 
-void Device::Destroy() {
+void Device::Destroy()
+{
     if (Allocator != VK_NULL_HANDLE) {
         vmaDestroyAllocator(Allocator);
         Allocator = VK_NULL_HANDLE;
@@ -101,4 +97,4 @@ void Device::Destroy() {
 }
 
 Device::~Device() { Destroy(); }
-}  // namespace yst::core
+} // namespace yst::core

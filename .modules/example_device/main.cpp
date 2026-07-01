@@ -2,7 +2,8 @@
 #include <exception>
 #include <iostream>
 
-int creation_test() {
+int creation_test()
+{
     yst::core::DeviceConfig config;
     config.EnableDebug = true;
     config.PreferIntegratedGPU = false;
@@ -19,7 +20,8 @@ int creation_test() {
     return 0;
 }
 
-int main() {
+int main()
+{
     try {
         return creation_test();
     } catch (const std::exception& e) {

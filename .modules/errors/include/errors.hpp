@@ -5,7 +5,7 @@ namespace yst {
 class CustomError {
     std::string message;
 
-   public:
+public:
     int code;
 
     [[nodiscard]] std::string str() const;
@@ -13,15 +13,23 @@ class CustomError {
     explicit operator bool() const { return code != 0; }
 
     CustomError(int code, const std::string& message)
-        : code(code), message(message) {}
+        : code(code)
+        , message(message)
+    {
+    }
 
-    CustomError() : code(0), message("") {}
+    CustomError()
+        : code(0)
+        , message("")
+    {
+    }
 
-    static CustomError Unknown() {
+    static CustomError Unknown()
+    {
         return CustomError(-1, "Something went wrong");
     }
 
     ~CustomError() = default;
 };
 
-}  // namespace yst
+} // namespace yst

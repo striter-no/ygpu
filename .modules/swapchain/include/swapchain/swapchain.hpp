@@ -18,7 +18,7 @@ struct FrameData {
 };
 
 class Swapchain {
-   private:
+private:
     Device* device = nullptr;
     SwapchainConfig config;
     VkSurfaceKHR surface = VK_NULL_HANDLE;
@@ -39,7 +39,7 @@ class Swapchain {
     void Cleanup();
     CustomError CreateFramebuffers();
 
-   public:
+public:
     Swapchain() = default;
     ~Swapchain();
 
@@ -63,9 +63,8 @@ class Swapchain {
     const SwapchainConfig& GetConfig() const { return config; }
 };
 
-// Заметь: config передается с дефолтным значением!
 std::pair<Swapchain, CustomError> CreateSwapchain(
     Device& device, const yst::ywin::Window& window,
-    SwapchainConfig config = SwapchainConfig{});
+    SwapchainConfig config = SwapchainConfig {});
 
-}  // namespace yst::core
+} // namespace yst::core

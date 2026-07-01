@@ -1,9 +1,11 @@
 #pragma once
 
 namespace yst::gpuc {
-enum Preset { DEFAULT_CONFIG, HEADLESS_CONFIG };
-enum Backend { BACKEND_VULKAN, BACKEND_MOCK };
-}  // namespace yst::gpuc
+enum Preset { DEFAULT_CONFIG,
+    HEADLESS_CONFIG };
+enum Backend { BACKEND_VULKAN,
+    BACKEND_MOCK };
+} // namespace yst::gpuc
 
 namespace yst::core {
 
@@ -14,4 +16,4 @@ struct DeviceConfig {
 };
 
 DeviceConfig CreateConfig(yst::gpuc::Preset preset);
-}  // namespace yst::core
+} // namespace yst::core

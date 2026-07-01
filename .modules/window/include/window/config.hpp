@@ -15,4 +15,4 @@ struct WindowConfig {
 };
 
 WindowConfig CreateConfig(ywinc::Preset preset);
-}  // namespace yst::ywin
+} // namespace yst::ywin

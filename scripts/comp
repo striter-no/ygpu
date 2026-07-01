@@ -1,0 +1,4 @@
+#!/usr/bin/bash
+
+glslc ./assets/shaders/shader.frag -o ./assets/shaders/compiled/frag.spv
+glslc ./assets/shaders/shader.vert -o ./assets/shaders/compiled/vert.spv
