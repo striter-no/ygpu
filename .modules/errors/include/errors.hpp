@@ -49,6 +49,8 @@ public:
         return CustomError(ErrorCode::Unknown, "Something went wrong");
     }
 
+    const char* name() const;
+
     ~CustomError() = default;
 };
 

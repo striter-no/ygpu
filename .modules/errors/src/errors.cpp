@@ -86,6 +86,36 @@ const char* ErrorName(int code)
         return "ShaderFileOpenFailed";
     case ErrorCode::ShaderFileEmpty:
         return "ShaderFileEmpty";
+
+    // Descriptor
+    case ErrorCode::DescriptorPoolCreationFailed:
+        return "DescriptorPoolCreationFailed";
+    case ErrorCode::DescriptorPoolExhausted:
+        return "DescriptorPoolExhausted";
+    case ErrorCode::DescriptorSetLayoutCreationFailed:
+        return "DescriptorSetLayoutCreationFailed";
+    case ErrorCode::DescriptorSetAllocationFailed:
+        return "DescriptorSetAllocationFailed";
+    case ErrorCode::DescriptorSetUpdateFailed:
+        return "DescriptorSetUpdateFailed";
+
+    // Image
+    case ErrorCode::ImageCreationFailed:
+        return "ImageCreationFailed";
+    case ErrorCode::ImageViewCreationFailed:
+        return "ImageViewCreationFailed";
+    case ErrorCode::SamplerCreationFailed:
+        return "SamplerCreationFailed";
+
+    // Texture
+    case ErrorCode::TextureFileOpenFailed:
+        return "TextureFileOpenFailed";
+    case ErrorCode::TextureFileDecodeFailed:
+        return "TextureFileDecodeFailed";
+    case ErrorCode::TextureUploadFailed:
+        return "TextureUploadFailed";
+    case ErrorCode::TextureUnsupportedFormat:
+        return "TextureUnsupportedFormat";
     }
 
     // Fall back: Vulkan VkResult values are negative; surface them by number.
@@ -100,10 +130,19 @@ const char* ErrorName(int code)
 
 std::string CustomError::str() const
 {
+    // Backwards-compatible format: "[<code>] Error: <message>".
+    // Existing tests assert on this exact string. The symbolic name from
+    // ErrorName() is available separately via the name() accessor for
+    // richer diagnostics in log output.
     if (code == 0)
         return "[no errors]";
 
-    return std::string("[") + ErrorName(code) + "] " + message;
+    return "[" + std::to_string(code) + "] Error: " + message;
 }
 
 } // namespace yst
+
+const char* yst::CustomError::name() const
+{
+    return ErrorName(code);
+}

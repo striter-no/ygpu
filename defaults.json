@@ -7,22 +7,22 @@
 
   "targets": {
     "release": {
-      "flags": ["-D_GNU_SOURCE"],
+      "flags": ["-D_GNU_SOURCE", "-std=c++20"],
       "optimization": "O3"
     },
 
     "debug": {
-      "flags": ["-fsanitize=address", "-g", "-D_GNU_SOURCE"],
+      "flags": ["-fsanitize=address", "-g", "-D_GNU_SOURCE", "-std=c++20"],
       "optimization": "O1"
     },
 
     "valgrind": {
-      "flags": ["-g", "-D_GNU_SOURCE"],
+      "flags": ["-g", "-D_GNU_SOURCE", "-std=c++20"],
       "optimization": "O1"
     },
 
     "debug-silent": {
-      "flags": ["-g", "-D_GNU_SOURCE", "-w"],
+      "flags": ["-g", "-D_GNU_SOURCE", "-w", "-std=c++20"],
       "optimization": "O1"
     }
   }

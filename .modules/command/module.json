@@ -2,7 +2,7 @@
   "metadata": {
     "name": "command",
     "version": "0.0.0",
-    "priority": 2
+    "priority": 6
   },
 
   "compiler": {
@@ -10,7 +10,8 @@
   },
 
   "dependencies": {
-    "device": { "version": ">=0.0.0" }
+    "device": { "version": ">=0.0.0" },
+    "descriptor": { "version": ">=0.0.0" }
   },
 
   "code": {

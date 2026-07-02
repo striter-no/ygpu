@@ -1,0 +1,24 @@
+{
+  "metadata": {
+    "name": "descriptor",
+    "version": "0.0.0",
+    "priority": 4
+  },
+
+  "compiler": {
+    "binary": "static-lib"
+  },
+
+  "dependencies": {
+    "errors": { "version": ">=0.0.0" },
+    "device": { "version": ">=0.0.0" }
+  },
+
+  "code": {
+    "sources": ["**/*.cpp"],
+    "output": "./bin/descriptor",
+    "includes": ["include"]
+  },
+
+  "target": "valgrind"
+}

@@ -1,38 +1,48 @@
 #pragma once
 #include <vulkan/vulkan.h>
 
+#include <descriptor/pipeline_layout.hpp>
 #include <device/device.hpp>
 #include <string>
 #include <vector>
 
 namespace yst::core {
 
+// Forward declaration so the friend declaration inside GraphicsPipeline
+// (which references CreateGraphicsPipeline's signature) can name the type.
+struct PipelineConfig;
+
 struct GraphicsPipeline {
     VkPipeline pipeline = VK_NULL_HANDLE;
     VkPipelineLayout layout = VK_NULL_HANDLE;
 
-    void Destroy(Device& device);
+    GraphicsPipeline() = default;
+    ~GraphicsPipeline() { Destroy(); }
+
+    GraphicsPipeline(const GraphicsPipeline&) = delete;
+    GraphicsPipeline& operator=(const GraphicsPipeline&) = delete;
+    GraphicsPipeline(GraphicsPipeline&& other) noexcept;
+    GraphicsPipeline& operator=(GraphicsPipeline&& other) noexcept;
+
+    void Destroy();
+
+private:
+    Device* device_ = nullptr;
+    bool ownsLayout_ = false;
+
+    friend std::pair<GraphicsPipeline, CustomError> CreateGraphicsPipeline(
+        Device& device, const PipelineConfig& config);
 };
 
-/// Layer 2 configuration for a graphics pipeline.
-///
-/// Every field defaults to the value that the historical hardcoded pipeline
-/// code used to set, so callers that construct `PipelineConfig{}` get the
-/// exact same pipeline as before. Advanced callers can override any subset
-/// of fields.
 struct PipelineConfig {
-    // ---- Vertex input -------------------------------------------------
     std::vector<VkVertexInputBindingDescription> bindings;
     std::vector<VkVertexInputAttributeDescription> attributes;
 
-    // ---- Input assembly ----------------------------------------------
     VkPrimitiveTopology Topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     VkBool32 PrimitiveRestartEnable = VK_FALSE;
 
-    // ---- Tessellation (optional) -------------------------------------
-    uint32_t PatchControlPoints = 0; ///< 0 = no tessellation stage.
+    uint32_t PatchControlPoints = 0;
 
-    // ---- Rasterizer ---------------------------------------------------
     VkBool32 DepthClampEnable = VK_FALSE;
     VkBool32 RasterizerDiscardEnable = VK_FALSE;
     VkPolygonMode PolygonMode = VK_POLYGON_MODE_FILL;
@@ -40,7 +50,6 @@ struct PipelineConfig {
     VkFrontFace FrontFace = VK_FRONT_FACE_CLOCKWISE;
     float LineWidth = 1.0f;
 
-    // ---- Multisample --------------------------------------------------
     VkSampleCountFlagBits RasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     VkBool32 SampleShadingEnable = VK_FALSE;
     float MinSampleShading = 0.0f;
@@ -48,51 +57,32 @@ struct PipelineConfig {
     VkBool32 AlphaToCoverageEnable = VK_FALSE;
     VkBool32 AlphaToOneEnable = VK_FALSE;
 
-    // ---- Depth/stencil (optional) ------------------------------------
-    /// If non-null, depth/stencil testing is enabled with the given state.
-    /// If null, no VkPipelineDepthStencilStateCreateInfo is chained.
     const VkPipelineDepthStencilStateCreateInfo* DepthStencil = nullptr;
 
-    // ---- Color blend --------------------------------------------------
-    /// Per-attachment blend states. If empty, a single backwards-compatible
-    /// attachment is synthesized with blendEnable=VK_FALSE and full RGBA
-    /// write mask.
     std::vector<VkPipelineColorBlendAttachmentState> ColorBlendAttachments;
     VkBool32 LogicOpEnable = VK_FALSE;
     VkLogicOp LogicOp = VK_LOGIC_OP_COPY;
     float BlendConstants[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
-    // ---- Dynamic state ------------------------------------------------
-    /// If empty, defaults to {VIEWPORT, SCISSOR}.
     std::vector<VkDynamicState> DynamicStates;
 
-    // ---- Shader stages ------------------------------------------------
     std::vector<uint32_t> vertexShaderSpv;
     std::vector<uint32_t> fragmentShaderSpv;
-    /// Optional: additional stages (geometry, tess control/eval, compute
-    /// shaders used as graphics stages, task/mesh). The vertex and fragment
-    /// modules above are always added; this vector is for everything else.
     std::vector<VkPipelineShaderStageCreateInfo> ExtraShaderStages;
     std::string VertexShaderEntryPoint = "main";
     std::string FragmentShaderEntryPoint = "main";
 
-    // ---- Layout / render pass integration ----------------------------
+    PipelineLayout* PipelineLayoutOverride = nullptr;
     std::vector<VkDescriptorSetLayout> DescriptorSetLayouts;
     std::vector<VkPushConstantRange> PushConstantRanges;
 
     VkRenderPass renderPass = VK_NULL_HANDLE;
     uint32_t Subpass = 0;
 
-    /// Pipeline cache to accelerate creation. Optional.
     VkPipelineCache PipelineCache = VK_NULL_HANDLE;
-
-    /// Optional base pipeline handle + index for derived pipelines.
     VkPipeline BasePipelineHandle = VK_NULL_HANDLE;
     int32_t BasePipelineIndex = -1;
 
-    /// Helper: push a standard "no blend, write RGBA" attachment state.
-    /// Useful when ColorBlendAttachments should be empty by default but the
-    /// caller wants to explicitly opt into a known attachment count.
     PipelineConfig& AddOpaqueColorAttachment() noexcept
     {
         VkPipelineColorBlendAttachmentState att {};

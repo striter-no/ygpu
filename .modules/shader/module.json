@@ -1,0 +1,24 @@
+{
+  "metadata": {
+    "name": "shader",
+    "version": "0.0.0",
+    "priority": 3
+  },
+
+  "compiler": {
+    "binary": "static-lib"
+  },
+
+  "dependencies": {
+    "errors": { "version": ">=0.0.0" },
+    "device": { "version": ">=0.0.0" }
+  },
+
+  "code": {
+    "sources": ["**/*.cpp"],
+    "output": "./bin/shader",
+    "includes": ["include"]
+  },
+
+  "target": "valgrind"
+}

@@ -1,108 +1,244 @@
 #include <buffer/buffer.hpp>
+#include <descriptor/bind_group.hpp>
+#include <descriptor/bind_group_layout.hpp>
+#include <descriptor/descriptor_pool.hpp>
+#include <descriptor/pipeline_layout.hpp>
 #include <device/device.hpp>
 #include <errors.hpp>
+#include <image/image.hpp>
+#include <image/sampler.hpp>
 #include <pipeline/pipeline.hpp>
+#include <shader/shader.hpp>
 #include <swapchain/swapchain.hpp>
+#include <texture/texture.hpp>
+#include <texture/texture_loader.hpp>
 #include <vulkan/vulkan_core.h>
 #include <window/window.hpp>
 
-#include <fstream>
+#include <cmath>
+#include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <vector>
 
 struct Vertex {
     float pos[2];
     float color[3];
+    float uv[2];
 };
 
-std::vector<uint32_t> LoadShader(const std::string& path)
+static const std::vector<Vertex> kQuadVertices = {
+    { { -0.75f, -0.75f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f } },
+    { { 0.75f, -0.75f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f } },
+    { { 0.75f, 0.75f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } },
+    { { -0.75f, 0.75f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } },
+};
+
+static const std::vector<uint16_t> kQuadIndices = { 0, 1, 2, 2, 3, 0 };
+
+struct alignas(16) Mat4 {
+    float m[16];
+};
+
+static Mat4 MakeRotationZ(float radians)
 {
-    std::ifstream file(path, std::ios::ate | std::ios::binary);
-    if (!file.is_open())
-        throw std::runtime_error("failed to open shader: " + path);
-    size_t fileSize = (size_t)file.tellg();
-    if (fileSize == 0 || fileSize % sizeof(uint32_t) != 0)
-        throw std::runtime_error("invalid shader file size: " + path);
-    std::vector<uint32_t> buffer(fileSize / sizeof(uint32_t));
-    file.seekg(0);
-    file.read((char*)buffer.data(), fileSize);
-    return buffer;
+    float c = std::cos(radians);
+    float s = std::sin(radians);
+    return { { c, -s, 0, 0, s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 } };
 }
 
 int main()
 {
-    // Layer 2 config: explicitly fill in the fields we care about. Fields
-    // left at their defaults match the historical hardcoded behaviour.
-    yst::ywin::WindowConfig wconfig;
-    wconfig.Width = 1024;
-    wconfig.Height = 768;
-    wconfig.Title = "YST Window Test";
-    wconfig.Resizable = true;
-    auto [window, werr] = yst::ywin::CreateWindow(wconfig);
+    // --- Window + device + swapchain ------------------------------------
+    auto [window, werr] = yst::ywin::CreateWindow({
+        .Width = 1024,
+        .Height = 768,
+        .Title = "YST Textured Quad",
+    });
     if (werr) {
-        std::cerr << "Failed to create window: " << werr.str() << std::endl;
+        std::cerr << "Window: " << werr.str() << "\n";
         return -1;
     }
 
-    yst::core::DeviceConfig dconfig;
-    dconfig.EnableDebug = true;
-    dconfig.PreferIntegratedGPU = false;
-    dconfig.PreferredBackend = yst::gpuc::BACKEND_VULKAN;
-    auto [device, derr] = yst::core::CreateDevice(dconfig);
+    auto [device, derr] = yst::core::CreateDevice({ .EnableDebug = true });
     if (derr) {
-        std::cerr << "Failed to create device: " << derr.str() << std::endl;
+        std::cerr << "Device: " << derr.str() << "\n";
         return -1;
     }
     std::cout << "Using GPU: " << device.GetDeviceName() << "\n";
 
     auto [swapchain, serr] = yst::core::CreateSwapchain(device, window);
     if (serr) {
-        std::cerr << "Failed to create swapchain: " << serr.str() << std::endl;
+        std::cerr << "Swapchain: " << serr.str() << "\n";
         return -1;
     }
 
-    std::vector<Vertex> vertices = {
-        { { 0.0f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
-        { { 0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f } },
-        { { -0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f } }
+    // --- Buffers (convenience helpers) ----------------------------------
+    auto [vertexBuffer, vbErr] = yst::core::CreateVertexBuffer(
+        device, sizeof(Vertex) * kQuadVertices.size());
+    if (vbErr) {
+        std::cerr << vbErr.str() << "\n";
+        return -1;
+    }
+    if (auto e = vertexBuffer.UploadData(
+            kQuadVertices.data(), sizeof(Vertex) * kQuadVertices.size())) {
+        std::cerr << e.str() << "\n";
+        return -1;
+    }
+
+    auto [indexBuffer, ibErr] = yst::core::CreateIndexBuffer(
+        device, sizeof(uint16_t) * kQuadIndices.size());
+    if (ibErr) {
+        std::cerr << ibErr.str() << "\n";
+        return -1;
+    }
+    if (auto e = indexBuffer.UploadData(
+            kQuadIndices.data(), sizeof(uint16_t) * kQuadIndices.size())) {
+        std::cerr << e.str() << "\n";
+        return -1;
+    }
+
+    auto [ubo, uboErr] = yst::core::CreateUniformBuffer(device, sizeof(Mat4));
+    if (uboErr) {
+        std::cerr << uboErr.str() << "\n";
+        return -1;
+    }
+
+    // --- Shaders --------------------------------------------------------
+    auto [vertSpv, ve] = yst::core::LoadSpvFile("./assets/shaders/compiled/vert.spv");
+    if (ve) {
+        std::cerr << "vert.spv: " << ve.str() << "\n";
+        return -1;
+    }
+    auto [fragSpv, fe] = yst::core::LoadSpvFile("./assets/shaders/compiled/frag.spv");
+    if (fe) {
+        std::cerr << "frag.spv: " << fe.str() << "\n";
+        return -1;
+    }
+
+    auto [vertMod, vmErr] = yst::core::CreateShaderModule(device, {
+                                                                      .Stage = VK_SHADER_STAGE_VERTEX_BIT,
+                                                                      .Spirv = vertSpv,
+                                                                  });
+    if (vmErr) {
+        std::cerr << vmErr.str() << "\n";
+        return -1;
+    }
+
+    auto [fragMod, fmErr] = yst::core::CreateShaderModule(device, {
+                                                                      .Stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                                                                      .Spirv = fragSpv,
+                                                                  });
+    if (fmErr) {
+        std::cerr << fmErr.str() << "\n";
+        return -1;
+    }
+
+    // --- Texture (load PNG; fall back to procedural checkerboard) -------
+    uint32_t texW = 0, texH = 0;
+    const void* texPixels = nullptr;
+
+    auto [pixels, loadErr] = yst::core::LoadStbImage(
+        "./assets/textures/checkerboard.png");
+    if (!loadErr) {
+        texW = static_cast<uint32_t>(pixels.Width);
+        texH = static_cast<uint32_t>(pixels.Height);
+        texPixels = pixels.bytes.data();
+        std::cout << "Loaded texture: " << texW << "x" << texH << "\n";
+    } else {
+        std::cerr << "Failed to load image: " << loadErr.str() << "\n";
+        return -1;
+    }
+
+    auto [texture, texErr] = yst::core::CreateTexture2D(device, {
+                                                                    .Pixels = texPixels,
+                                                                    .Width = texW,
+                                                                    .Height = texH,
+                                                                    .Channels = 4,
+                                                                    .Format = VK_FORMAT_R8G8B8A8_SRGB,
+                                                                    .GenerateMipmaps = true,
+                                                                    .SamplerCfg = {
+                                                                        .AddressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                                                                        .AddressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                                                                    },
+                                                                });
+    if (texErr) {
+        std::cerr << texErr.str() << "\n";
+        return -1;
+    }
+
+    // --- BindGroupLayout via Builder ------------------------------------
+    auto [bgl, bglErr] = yst::core::BindGroupLayoutBuilder()
+                             .AddUniformBuffer(0, yst::core::ShaderStageBits::Vertex)
+                             .AddCombinedTextureSampler(1, yst::core::ShaderStageBits::Fragment)
+                             .Build(device);
+    if (bglErr) {
+        std::cerr << bglErr.str() << "\n";
+        return -1;
+    }
+
+    // --- PipelineLayout -------------------------------------------------
+    auto [pipelineLayout, plErr] = yst::core::CreatePipelineLayout(device, {
+                                                                               .BindGroupLayouts = { &bgl },
+                                                                           });
+    if (plErr) {
+        std::cerr << plErr.str() << "\n";
+        return -1;
+    }
+
+    // --- DescriptorPool + BindGroup -------------------------------------
+    // Auto-size the pool from the layout before creating it.
+    yst::core::DescriptorPoolConfig poolCfg {
+        .MaxSets = 16,
     };
-
-    auto [vertexBuffer, berr] = yst::core::CreateBuffer(
-        device, sizeof(Vertex) * vertices.size(),
-        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, /*hostVisible=*/true);
-
-    if (berr) {
-        std::cerr << "Buffer error: " << berr.str() << "\n";
+    poolCfg.AutoSizeFromLayouts({ &bgl });
+    auto [pool, poolErr] = yst::core::CreateDescriptorPool(device, poolCfg);
+    if (poolErr) {
+        std::cerr << poolErr.str() << "\n";
         return -1;
     }
 
-    if (auto err = vertexBuffer.UploadData(vertices.data(), sizeof(Vertex) * vertices.size())) {
-        std::cerr << "Upload error: " << err.str() << "\n";
+    auto [bg, bgErr] = yst::core::CreateBindGroup(device, pool, {
+                                                                    .Layout = &bgl,
+                                                                    .Entries = {
+                                                                        { .Binding = 0, .Buffer = ubo.buffer, .Range = VK_WHOLE_SIZE },
+                                                                        { .Binding = 1, .ImageView = texture.view.view, .Sampler = texture.sampler.sampler, .ImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
+                                                                    },
+                                                                });
+    if (bgErr) {
+        std::cerr << bgErr.str() << "\n";
         return -1;
     }
 
-    yst::core::PipelineConfig pConfig;
-    pConfig.renderPass = swapchain.GetRenderPass();
-    pConfig.vertexShaderSpv = LoadShader("./assets/shaders/compiled/vert.spv");
-    pConfig.fragmentShaderSpv = LoadShader("./assets/shaders/compiled/frag.spv");
-
-    pConfig.bindings.push_back({ 0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX });
-    pConfig.attributes.push_back({ 0, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, pos) });
-    pConfig.attributes.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color) });
-
-    // The remaining pipeline state (topology, cull mode, blend, dynamic
-    // states, etc.) is left at the defaults baked into PipelineConfig, which
-    // match the historical hardcoded pipeline. Override individual fields
-    // here to customise.
-
-    auto [pipeline, perr] = yst::core::CreateGraphicsPipeline(device, pConfig);
-    if (perr) {
-        std::cerr << "Failed to create graphics pipeline: " << perr.str() << std::endl;
+    // --- Graphics pipeline ----------------------------------------------
+    auto [pipeline, pErr] = yst::core::CreateGraphicsPipeline(device, {
+                                                                          .PipelineLayoutOverride = &pipelineLayout,
+                                                                          .renderPass = swapchain.GetRenderPass(),
+                                                                          .vertexShaderSpv = vertSpv,
+                                                                          .fragmentShaderSpv = fragSpv,
+                                                                          .bindings = { { 0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX } },
+                                                                          .attributes = {
+                                                                              { 0, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, pos) },
+                                                                              { 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color) },
+                                                                              { 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv) },
+                                                                          },
+                                                                      });
+    if (pErr) {
+        std::cerr << pErr.str() << "\n";
         return -1;
     }
 
+    // --- Render loop ----------------------------------------------------
+    uint64_t frame = 0;
     while (window.IsOpen()) {
         window.PollEvents();
+
+        // Per-frame: rotate the quad.
+        Mat4 mvp = MakeRotationZ(static_cast<float>(frame) * 0.01f);
+        if (auto e = ubo.UploadData(&mvp, sizeof(Mat4))) {
+            std::cerr << "UBO update: " << e.str() << "\n";
+            break;
+        }
 
         auto [cmd, cmdErr] = swapchain.AcquireNextFrame(window);
         if (cmdErr) {
@@ -120,25 +256,27 @@ int main()
             swapchain.GetConfig().ClearColor);
 
         cmd.BindPipeline(pipeline.pipeline);
-
+        cmd.BindBindGroup(pipelineLayout.layout, /*setIndex=*/0, bg);
         cmd.BindVertexBuffer(vertexBuffer.buffer);
-        cmd.Draw(vertices.size());
+        cmd.BindIndexBuffer(indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT16);
+        cmd.DrawIndexed(kQuadIndices.size());
 
         cmd.EndRenderPass();
-        if (auto presentErr = swapchain.Present(cmd)) {
-            std::cerr << "Present error: " << presentErr.str() << "\n";
+        if (auto pe = swapchain.Present(cmd)) {
+            std::cerr << "Present: " << pe.str() << "\n";
             break;
         }
-
-        // If Present() flagged the swapchain as out-of-date/suboptimal,
-        // recreate before the next acquire.
         if (swapchain.NeedsRecreate())
             swapchain.Recreate(window);
+
+        ++frame;
     }
 
     vkDeviceWaitIdle(device.LogicalDevice);
-    pipeline.Destroy(device);
-    vertexBuffer.Destroy(device);
 
+    // No explicit Destroy() calls! All resources auto-clean on scope exit.
+    // RAII destructors handle: pipeline, pipelineLayout, bgl, pool (frees bg),
+    // texture (image+view+sampler), vertMod, fragMod, ubo, indexBuffer,
+    // vertexBuffer, swapchain, device, window.
     return 0;
 }

@@ -1,0 +1,27 @@
+{
+  "metadata": {
+    "name": "texture",
+    "version": "0.0.0",
+    "priority": 7
+  },
+
+  "compiler": {
+    "binary": "static-lib"
+  },
+
+  "dependencies": {
+    "errors": { "version": ">=0.0.0" },
+    "device": { "version": ">=0.0.0" },
+    "image": { "version": ">=0.0.0" },
+    "buffer": { "version": ">=0.0.0" },
+    "command": { "version": ">=0.0.0" }
+  },
+
+  "code": {
+    "sources": ["**/*.cpp"],
+    "output": "./bin/texture",
+    "includes": ["include"]
+  },
+
+  "target": "valgrind"
+}

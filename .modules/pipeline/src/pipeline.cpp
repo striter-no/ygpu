@@ -4,6 +4,52 @@
 
 namespace yst::core {
 
+GraphicsPipeline::GraphicsPipeline(GraphicsPipeline&& other) noexcept
+{
+    device_ = other.device_;
+    ownsLayout_ = other.ownsLayout_;
+    pipeline = other.pipeline;
+    layout = other.layout;
+
+    other.device_ = nullptr;
+    other.ownsLayout_ = false;
+    other.pipeline = VK_NULL_HANDLE;
+    other.layout = VK_NULL_HANDLE;
+}
+
+GraphicsPipeline& GraphicsPipeline::operator=(GraphicsPipeline&& other) noexcept
+{
+    if (this != &other) {
+        Destroy();
+        device_ = other.device_;
+        ownsLayout_ = other.ownsLayout_;
+        pipeline = other.pipeline;
+        layout = other.layout;
+
+        other.device_ = nullptr;
+        other.ownsLayout_ = false;
+        other.pipeline = VK_NULL_HANDLE;
+        other.layout = VK_NULL_HANDLE;
+    }
+    return *this;
+}
+
+void GraphicsPipeline::Destroy()
+{
+    if (!device_)
+        return;
+    if (pipeline != VK_NULL_HANDLE) {
+        vkDestroyPipeline(device_->LogicalDevice, pipeline, nullptr);
+        pipeline = VK_NULL_HANDLE;
+    }
+    if (ownsLayout_ && layout != VK_NULL_HANDLE) {
+        vkDestroyPipelineLayout(device_->LogicalDevice, layout, nullptr);
+        layout = VK_NULL_HANDLE;
+    }
+    ownsLayout_ = false;
+    device_ = nullptr;
+}
+
 namespace {
 
     /// Build a VkShaderModule from SPIR-V bytecode. Returns VK_NULL_HANDLE on
@@ -57,6 +103,7 @@ std::pair<GraphicsPipeline, CustomError> CreateGraphicsPipeline(
     Device& device, const PipelineConfig& config)
 {
     GraphicsPipeline out;
+    out.device_ = &device;
 
     // 1. Shader stages.
     VkShaderModule vertModule = VK_NULL_HANDLE;
@@ -174,9 +221,58 @@ std::pair<GraphicsPipeline, CustomError> CreateGraphicsPipeline(
     dynamicState.dynamicStateCount = static_cast<uint32_t>(dynStates.size());
     dynamicState.pDynamicStates = dynStates.data();
 
-    // 10. Pipeline layout. Built from descriptor set layouts + push constants
-    //     supplied by the caller; both empty by default (the historical
-    //     behaviour was a layout with zero sets and zero push constants).
+    // 10. Pipeline layout. If the caller supplied a pre-built
+    //     PipelineLayout (preferred path when using the descriptor module),
+    //     use it directly. Otherwise build one from the raw
+    //     DescriptorSetLayouts + PushConstantRanges for backward
+    //     compatibility with the old API.
+    if (config.PipelineLayoutOverride
+        && config.PipelineLayoutOverride->layout != VK_NULL_HANDLE) {
+        // Use the external layout but mark that we don't own it — the
+        // caller is responsible for keeping the PipelineLayout alive for
+        // the pipeline's lifetime and destroying it separately.
+        const VkPipelineLayout externalLayout = config.PipelineLayoutOverride->layout;
+        out.ownsLayout_ = false;
+        // out.layout stays VK_NULL_HANDLE — Destroy() won't touch the
+        // external layout. The pipeline itself uses externalLayout for
+        // creation only.
+
+        VkGraphicsPipelineCreateInfo pipelineInfo {};
+        pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
+        pipelineInfo.pStages = shaderStages.data();
+        pipelineInfo.pVertexInputState = &vertexInputInfo;
+        pipelineInfo.pInputAssemblyState = &inputAssembly;
+        pipelineInfo.pTessellationState = tessellationPtr;
+        pipelineInfo.pViewportState = &viewportState;
+        pipelineInfo.pRasterizationState = &rasterizer;
+        pipelineInfo.pMultisampleState = &multisampling;
+        pipelineInfo.pDepthStencilState = config.DepthStencil;
+        pipelineInfo.pColorBlendState = &colorBlending;
+        pipelineInfo.pDynamicState = &dynamicState;
+        pipelineInfo.layout = externalLayout;
+        pipelineInfo.renderPass = config.renderPass;
+        pipelineInfo.subpass = config.Subpass;
+        pipelineInfo.basePipelineHandle = config.BasePipelineHandle;
+        pipelineInfo.basePipelineIndex = config.BasePipelineIndex;
+
+        VkResult res = vkCreateGraphicsPipelines(device.LogicalDevice,
+            config.PipelineCache, 1, &pipelineInfo, nullptr, &out.pipeline);
+
+        if (vertModule)
+            vkDestroyShaderModule(device.LogicalDevice, vertModule, nullptr);
+        if (fragModule)
+            vkDestroyShaderModule(device.LogicalDevice, fragModule, nullptr);
+
+        if (res != VK_SUCCESS) {
+            return { std::move(out),
+                CustomError(ErrorCode::GraphicsPipelineCreationFailed,
+                    "Failed to create graphics pipeline") };
+        }
+
+        return { std::move(out), CustomError() };
+    }
+
     VkPipelineLayoutCreateInfo pipelineLayoutInfo {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(config.DescriptorSetLayouts.size());
@@ -195,6 +291,7 @@ std::pair<GraphicsPipeline, CustomError> CreateGraphicsPipeline(
             CustomError(ErrorCode::PipelineLayoutCreationFailed,
                 "Failed to create pipeline layout") };
     }
+    out.ownsLayout_ = true;
 
     // 11. Graphics pipeline create info.
     VkGraphicsPipelineCreateInfo pipelineInfo {};
@@ -233,19 +330,7 @@ std::pair<GraphicsPipeline, CustomError> CreateGraphicsPipeline(
                 "Failed to create graphics pipeline") };
     }
 
-    return { out, CustomError() };
-}
-
-void GraphicsPipeline::Destroy(Device& device)
-{
-    if (pipeline != VK_NULL_HANDLE) {
-        vkDestroyPipeline(device.LogicalDevice, pipeline, nullptr);
-        pipeline = VK_NULL_HANDLE;
-    }
-    if (layout != VK_NULL_HANDLE) {
-        vkDestroyPipelineLayout(device.LogicalDevice, layout, nullptr);
-        layout = VK_NULL_HANDLE;
-    }
+    return { std::move(out), CustomError() };
 }
 
 } // namespace yst::core

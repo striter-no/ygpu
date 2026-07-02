@@ -2,7 +2,7 @@
   "metadata": {
     "name": "pipeline",
     "version": "0.0.0",
-    "priority": 100
+    "priority": 7
   },
 
   "compiler": {
@@ -11,7 +11,8 @@
 
   "dependencies": {
     "errors": { "version": ">=0.0.0" },
-    "device": { "version": ">=0.0.0" }
+    "device": { "version": ">=0.0.0" },
+    "descriptor": { "version": ">=0.0.0" }
   },
 
   "code": {

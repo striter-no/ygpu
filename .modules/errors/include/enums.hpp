@@ -69,6 +69,24 @@ enum class ErrorCode : int {
     // ---- Shader (yst::core) -------------------------------------------
     ShaderFileOpenFailed = 700,
     ShaderFileEmpty = 701,
+
+    // ---- Descriptor (yst::core) ---------------------------------------
+    DescriptorPoolCreationFailed = 800,
+    DescriptorPoolExhausted = 801,
+    DescriptorSetLayoutCreationFailed = 802,
+    DescriptorSetAllocationFailed = 803,
+    DescriptorSetUpdateFailed = 804,
+
+    // ---- Image (yst::core) --------------------------------------------
+    ImageCreationFailed = 900,
+    ImageViewCreationFailed = 901,
+    SamplerCreationFailed = 902,
+
+    // ---- Texture (yst::core) ------------------------------------------
+    TextureFileOpenFailed = 1000,
+    TextureFileDecodeFailed = 1001,
+    TextureUploadFailed = 1002,
+    TextureUnsupportedFormat = 1003,
 };
 
 /// Convert an ErrorCode (or raw int) to a short symbolic name, e.g.
