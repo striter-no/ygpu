@@ -9,6 +9,11 @@
 
 namespace yst::core {
 
+enum class DescriptorPoolPreset {
+    Default = 0,
+    Manual,
+};
+
 struct DescriptorPoolConfig {
     uint32_t MaxSets = 1000;
     std::vector<VkDescriptorPoolSize> PoolSizes;
@@ -26,6 +31,8 @@ struct DescriptorPoolConfig {
         return *this;
     }
 };
+
+DescriptorPoolConfig CreateConfig(DescriptorPoolPreset preset);
 
 /// Owning wrapper around a VkDescriptorPool. RAII. Destroying the pool
 /// invalidates all BindGroups allocated from it.

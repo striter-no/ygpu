@@ -15,6 +15,29 @@
 
 namespace yst::core {
 
+Texture2DConfig CreateConfig(Texture2DPreset preset)
+{
+    Texture2DConfig cfg;
+    cfg.Channels = 4;
+    cfg.SamplerCfg = CreateConfig(SamplerPreset::LinearRepeat);
+
+    switch (preset) {
+    case Texture2DPreset::Rgba8Srgb:
+        cfg.Format = VK_FORMAT_R8G8B8A8_SRGB;
+        return cfg;
+
+    case Texture2DPreset::MipmappedRgba8Srgb:
+        cfg.Format = VK_FORMAT_R8G8B8A8_SRGB;
+        cfg.GenerateMipmaps = true;
+        return cfg;
+
+    case Texture2DPreset::Rgba8Unorm:
+    default:
+        cfg.Format = VK_FORMAT_R8G8B8A8_UNORM;
+        return cfg;
+    }
+}
+
 namespace {
 
     /// Pick a sensible 8-bit unorm VkFormat from a channel count.
@@ -64,10 +87,9 @@ std::pair<Texture2D, CustomError> CreateTexture2D(
         : 1;
 
     // 1. Create the destination image.
-    ImageConfig imgCfg;
-    imgCfg.As2DTexture(config.Width, config.Height, format, mipLevels);
-    if (config.GenerateMipmaps)
-        imgCfg.Usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    auto imgCfg = ImageBuilder(ImagePreset::Texture2D)
+                      .As2DTexture(config.Width, config.Height, format, mipLevels)
+                      .Build();
     auto [image, imgErr] = CreateImage(device, imgCfg);
     if (imgErr)
         return { std::move(out), imgErr };
@@ -184,9 +206,10 @@ std::pair<Texture2D, CustomError> CreateTexture2D(
     }
 
     // 4. Create the image view.
-    ImageViewConfig viewCfg;
-    viewCfg.AspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    viewCfg.Type = VK_IMAGE_VIEW_TYPE_2D;
+    auto viewCfg = ImageViewBuilder(ImageViewPreset::Color2D)
+                       .WithAspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
+                       .WithType(VK_IMAGE_VIEW_TYPE_2D)
+                       .Build();
     auto [view, viewErr] = CreateImageView(device, out.image, viewCfg);
     if (viewErr) {
         out.image.Destroy();
@@ -207,3 +230,4 @@ std::pair<Texture2D, CustomError> CreateTexture2D(
 }
 
 } // namespace yst::core
+

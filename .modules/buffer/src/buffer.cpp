@@ -1,7 +1,42 @@
+// yst buffer module implementation — Builder pattern (v3)
 #include <buffer/buffer.hpp>
 #include <cstring>
 
 namespace yst::core {
+
+BufferConfig CreateConfig(BufferPreset preset)
+{
+    BufferConfig cfg;
+
+    switch (preset) {
+    case BufferPreset::Uniform:
+        cfg.Usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        cfg.AllocationFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+            | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        cfg.HostVisible = true;
+        return cfg;
+
+    case BufferPreset::Vertex:
+        cfg.Usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        return cfg;
+
+    case BufferPreset::Index:
+        cfg.Usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+        return cfg;
+
+    case BufferPreset::Staging:
+        cfg.Usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        cfg.AllocationFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+            | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        cfg.HostVisible = true;
+        return cfg;
+
+    case BufferPreset::Empty:
+    default:
+        return cfg;
+    }
+}
+
 
 Buffer::Buffer(Buffer&& other) noexcept
 {
@@ -109,46 +144,5 @@ CustomError Buffer::UploadData(const void* data, size_t dataSize)
     return CustomError();
 }
 
-// ---- Convenience overloads -----------------------------------------------
-
-std::pair<Buffer, CustomError> CreateUniformBuffer(Device& device, VkDeviceSize size)
-{
-    BufferConfig cfg;
-    cfg.Size = size;
-    cfg.Usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    cfg.HostVisible();
-    return CreateBuffer(device, cfg);
-}
-
-std::pair<Buffer, CustomError> CreateVertexBuffer(Device& device, VkDeviceSize size,
-    bool hostVisible)
-{
-    BufferConfig cfg;
-    cfg.Size = size;
-    cfg.Usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    if (hostVisible)
-        cfg.HostVisible();
-    return CreateBuffer(device, cfg);
-}
-
-std::pair<Buffer, CustomError> CreateIndexBuffer(Device& device, VkDeviceSize size,
-    bool hostVisible)
-{
-    BufferConfig cfg;
-    cfg.Size = size;
-    cfg.Usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    if (hostVisible)
-        cfg.HostVisible();
-    return CreateBuffer(device, cfg);
-}
-
-std::pair<Buffer, CustomError> CreateStagingBuffer(Device& device, VkDeviceSize size)
-{
-    BufferConfig cfg;
-    cfg.Size = size;
-    cfg.Usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    cfg.HostVisible();
-    return CreateBuffer(device, cfg);
-}
-
 } // namespace yst::core
+

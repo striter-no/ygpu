@@ -5,6 +5,16 @@
 
 namespace yst::core {
 
+BindGroupLayoutConfig CreateConfig(BindGroupLayoutPreset preset)
+{
+    BindGroupLayoutConfig cfg;
+    switch (preset) {
+    case BindGroupLayoutPreset::Empty:
+    default:
+        return cfg;
+    }
+}
+
 VkDescriptorType ToVkDescriptorType(BindingType type) noexcept
 {
     switch (type) {
@@ -112,3 +122,4 @@ std::pair<BindGroupLayout, CustomError> CreateBindGroupLayout(
 }
 
 } // namespace yst::core
+

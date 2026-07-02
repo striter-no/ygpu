@@ -1,9 +1,30 @@
+// yst shader module implementation — Builder pattern (v3)
 #include <shader/shader.hpp>
 
 #include <cstring>
 #include <fstream>
 
 namespace yst::core {
+
+ShaderModuleConfig CreateConfig(ShaderModulePreset preset)
+{
+    ShaderModuleConfig cfg;
+
+    switch (preset) {
+    case ShaderModulePreset::Fragment:
+        cfg.Stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        return cfg;
+
+    case ShaderModulePreset::Compute:
+        cfg.Stage = VK_SHADER_STAGE_COMPUTE_BIT;
+        return cfg;
+
+    case ShaderModulePreset::Vertex:
+    default:
+        cfg.Stage = VK_SHADER_STAGE_VERTEX_BIT;
+        return cfg;
+    }
+}
 
 ShaderModule::ShaderModule(ShaderModule&& other) noexcept
 {
@@ -115,3 +136,4 @@ std::pair<std::vector<uint32_t>, CustomError> LoadSpvFile(
 }
 
 } // namespace yst::core
+

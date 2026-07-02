@@ -11,11 +11,18 @@
 
 namespace yst::core {
 
+enum class CommandPoolPreset {
+    Resettable = 0,
+    Transient,
+};
+
 /// Layer 2 configuration for a VkCommandPool.
 struct CommandPoolConfig {
     VkCommandPoolCreateFlags Flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     uint32_t QueueFamilyIndex = 0; ///< Caller must fill this in.
 };
+
+CommandPoolConfig CreateConfig(CommandPoolPreset preset);
 
 /// Bind point selector for command buffer methods that historically only
 /// supported graphics.
@@ -156,3 +163,4 @@ CustomError SubmitOneTimeCommands(Device& device,
     const std::function<CustomError(CommandList&)>& recorder);
 
 } // namespace yst::core
+

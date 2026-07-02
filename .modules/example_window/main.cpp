@@ -50,17 +50,18 @@ static Mat4 MakeRotationZ(float radians)
 int main()
 {
     // --- Window + device + swapchain ------------------------------------
-    auto [window, werr] = yst::ywin::CreateWindow({
-        .Width = 1024,
-        .Height = 768,
-        .Title = "YST Textured Quad",
-    });
+    auto winCfg = yst::ywin::CreateConfig(yst::ywinc::DEFAULT_WINDOW);
+    winCfg.Width = 1024;
+    winCfg.Height = 768;
+    winCfg.Title = "YST Textured Quad";
+    auto [window, werr] = yst::ywin::CreateWindow(winCfg);
     if (werr) {
         std::cerr << "Window: " << werr.str() << "\n";
         return -1;
     }
 
-    auto [device, derr] = yst::core::CreateDevice({ .EnableDebug = true });
+    auto deviceCfg = yst::core::CreateConfig(yst::gpuc::DEBUG_CONFIG);
+    auto [device, derr] = yst::core::CreateDevice(deviceCfg);
     if (derr) {
         std::cerr << "Device: " << derr.str() << "\n";
         return -1;
@@ -116,25 +117,25 @@ int main()
         return -1;
     }
 
-    auto [vertMod, vmErr] = yst::core::CreateShaderModule(device, {
-                                                                      .Stage = VK_SHADER_STAGE_VERTEX_BIT,
-                                                                      .Spirv = vertSpv,
-                                                                  });
+    auto vertCfg = yst::core::ShaderModuleBuilder(yst::core::ShaderModulePreset::Vertex)
+                       .WithSpirv(vertSpv)
+                       .Build();
+    auto [vertMod, vmErr] = yst::core::CreateShaderModule(device, vertCfg);
     if (vmErr) {
         std::cerr << vmErr.str() << "\n";
         return -1;
     }
 
-    auto [fragMod, fmErr] = yst::core::CreateShaderModule(device, {
-                                                                      .Stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                                                      .Spirv = fragSpv,
-                                                                  });
+    auto fragCfg = yst::core::ShaderModuleBuilder(yst::core::ShaderModulePreset::Fragment)
+                       .WithSpirv(fragSpv)
+                       .Build();
+    auto [fragMod, fmErr] = yst::core::CreateShaderModule(device, fragCfg);
     if (fmErr) {
         std::cerr << fmErr.str() << "\n";
         return -1;
     }
 
-    // --- Texture (load PNG; fall back to procedural checkerboard) -------
+    // --- Texture ----------------------------
     uint32_t texW = 0, texH = 0;
     const void* texPixels = nullptr;
 
@@ -150,37 +151,32 @@ int main()
         return -1;
     }
 
-    auto [texture, texErr] = yst::core::CreateTexture2D(device, {
-                                                                    .Pixels = texPixels,
-                                                                    .Width = texW,
-                                                                    .Height = texH,
-                                                                    .Channels = 4,
-                                                                    .Format = VK_FORMAT_R8G8B8A8_SRGB,
-                                                                    .GenerateMipmaps = true,
-                                                                    .SamplerCfg = {
-                                                                        .AddressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                                                                        .AddressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                                                                    },
-                                                                });
+    auto textureCfg = yst::core::Texture2DBuilder(yst::core::Texture2DPreset::MipmappedRgba8Srgb)
+                          .WithPixels(texPixels)
+                          .WithExtent(texW, texH)
+                          .Build();
+    auto [texture, texErr] = yst::core::CreateTexture2D(device, textureCfg);
     if (texErr) {
         std::cerr << texErr.str() << "\n";
         return -1;
     }
 
     // --- BindGroupLayout via Builder ------------------------------------
-    auto [bgl, bglErr] = yst::core::BindGroupLayoutBuilder()
-                             .AddUniformBuffer(0, yst::core::ShaderStageBits::Vertex)
-                             .AddCombinedTextureSampler(1, yst::core::ShaderStageBits::Fragment)
-                             .Build(device);
+    auto bglCfg = yst::core::BindGroupLayoutBuilder(yst::core::BindGroupLayoutPreset::Empty)
+                      .AddUniformBuffer(0, yst::core::ShaderStageBits::Vertex)
+                      .AddCombinedTextureSampler(1, yst::core::ShaderStageBits::Fragment)
+                      .Build();
+    auto [bgl, bglErr] = yst::core::CreateBindGroupLayout(device, bglCfg);
     if (bglErr) {
         std::cerr << bglErr.str() << "\n";
         return -1;
     }
 
     // --- PipelineLayout -------------------------------------------------
-    auto [pipelineLayout, plErr] = yst::core::CreatePipelineLayout(device, {
-                                                                               .BindGroupLayouts = { &bgl },
-                                                                           });
+    auto pipelineLayoutCfg = yst::core::PipelineLayoutBuilder(yst::core::PipelineLayoutPreset::Empty)
+                                 .AddBindGroupLayout(bgl)
+                                 .Build();
+    auto [pipelineLayout, plErr] = yst::core::CreatePipelineLayout(device, pipelineLayoutCfg);
     if (plErr) {
         std::cerr << plErr.str() << "\n";
         return -1;
@@ -188,9 +184,7 @@ int main()
 
     // --- DescriptorPool + BindGroup -------------------------------------
     // Auto-size the pool from the layout before creating it.
-    yst::core::DescriptorPoolConfig poolCfg {
-        .MaxSets = 16,
-    };
+    yst::core::DescriptorPoolConfig poolCfg = { .MaxSets = 16 };
     poolCfg.AutoSizeFromLayouts({ &bgl });
     auto [pool, poolErr] = yst::core::CreateDescriptorPool(device, poolCfg);
     if (poolErr) {
@@ -198,31 +192,40 @@ int main()
         return -1;
     }
 
-    auto [bg, bgErr] = yst::core::CreateBindGroup(device, pool, {
-                                                                    .Layout = &bgl,
-                                                                    .Entries = {
-                                                                        { .Binding = 0, .Buffer = ubo.buffer, .Range = VK_WHOLE_SIZE },
-                                                                        { .Binding = 1, .ImageView = texture.view.view, .Sampler = texture.sampler.sampler, .ImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
-                                                                    },
-                                                                });
+    yst::core::BindGroupEntry uboEntry = {
+        .Binding = 0,
+        .Buffer = ubo.buffer,
+        .Range = VK_WHOLE_SIZE,
+    };
+
+    yst::core::BindGroupEntry textureEntry = {
+        .Binding = 1,
+        .ImageView = texture.view.view,
+        .ImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        .Sampler = texture.sampler.sampler,
+    };
+
+    yst::core::BindGroupConfig bindGroupCfg;
+    bindGroupCfg.Layout = &bgl;
+    bindGroupCfg.Entries = { uboEntry, textureEntry };
+    auto [bg, bgErr] = yst::core::CreateBindGroup(device, pool, bindGroupCfg);
     if (bgErr) {
         std::cerr << bgErr.str() << "\n";
         return -1;
     }
 
     // --- Graphics pipeline ----------------------------------------------
-    auto [pipeline, pErr] = yst::core::CreateGraphicsPipeline(device, {
-                                                                          .PipelineLayoutOverride = &pipelineLayout,
-                                                                          .renderPass = swapchain.GetRenderPass(),
-                                                                          .vertexShaderSpv = vertSpv,
-                                                                          .fragmentShaderSpv = fragSpv,
-                                                                          .bindings = { { 0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX } },
-                                                                          .attributes = {
-                                                                              { 0, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, pos) },
-                                                                              { 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color) },
-                                                                              { 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv) },
-                                                                          },
-                                                                      });
+    auto pipelineCfg = yst::core::PipelineBuilder(yst::core::PipelinePreset::OpaqueGraphics)
+                           .WithPipelineLayout(pipelineLayout)
+                           .WithRenderPass(swapchain.GetRenderPass())
+                           .WithVertexShaderSpv(vertSpv)
+                           .WithFragmentShaderSpv(fragSpv)
+                           .AddVertexBinding({ 0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX })
+                           .AddVertexAttribute({ 0, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, pos) })
+                           .AddVertexAttribute({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color) })
+                           .AddVertexAttribute({ 2, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv) })
+                           .Build();
+    auto [pipeline, pErr] = yst::core::CreateGraphicsPipeline(device, pipelineCfg);
     if (pErr) {
         std::cerr << pErr.str() << "\n";
         return -1;
@@ -273,10 +276,5 @@ int main()
     }
 
     vkDeviceWaitIdle(device.LogicalDevice);
-
-    // No explicit Destroy() calls! All resources auto-clean on scope exit.
-    // RAII destructors handle: pipeline, pipelineLayout, bgl, pool (frees bg),
-    // texture (image+view+sampler), vertMod, fragMod, ubo, indexBuffer,
-    // vertexBuffer, swapchain, device, window.
     return 0;
 }

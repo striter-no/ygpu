@@ -130,13 +130,13 @@ static int test_create_reset_destroy_integration()
         return 3;
     }
 
-    if (auto resetErr = pool.Reset(*device)) {
+    if (auto resetErr = pool.Reset()) {
         std::cerr << "FAIL: reset failed: " << resetErr.str() << "\n";
         return 4;
     }
 
-    pool.Destroy(*device);
-    layout.Destroy(*device);
+    pool.Destroy();
+    layout.Destroy();
     if (pool.pool != VK_NULL_HANDLE) {
         std::cerr << "FAIL: Destroy did not null pool handle\n";
         return 5;
@@ -170,3 +170,4 @@ int main()
     std::cout << "test_descriptor_pool: all tests passed\n";
     return 0;
 }
+

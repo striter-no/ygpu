@@ -72,3 +72,4 @@ inline std::pair<Window, CustomError> CreateWindow()
 }
 
 } // namespace yst::ywin
+

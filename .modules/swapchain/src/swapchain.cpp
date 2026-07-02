@@ -9,6 +9,27 @@
 
 namespace yst::core {
 
+SwapchainConfig CreateConfig(SwapchainPreset preset)
+{
+    SwapchainConfig cfg;
+    switch (preset) {
+    case SwapchainPreset::Mailbox:
+        cfg.PresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+        cfg.FallbackPresentModes = { VK_PRESENT_MODE_FIFO_KHR };
+        return cfg;
+    case SwapchainPreset::Immediate:
+        cfg.PresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+        cfg.FallbackPresentModes = { VK_PRESENT_MODE_FIFO_KHR };
+        return cfg;
+    case SwapchainPreset::WithDepth:
+        cfg.Depth.Format = VK_FORMAT_D32_SFLOAT;
+        return cfg;
+    case SwapchainPreset::Default:
+    default:
+        return cfg;
+    }
+}
+
 namespace {
 
     /// Block until the window has a non-zero framebuffer size. Uses
@@ -551,3 +572,4 @@ CustomError Swapchain::Recreate(const yst::ywin::Window& window)
 }
 
 } // namespace yst::core
+

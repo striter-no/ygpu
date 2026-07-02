@@ -1,6 +1,37 @@
+// yst sampler implementation — Builder pattern (v3)
 #include <image/sampler.hpp>
 
 namespace yst::core {
+
+SamplerConfig CreateConfig(SamplerPreset preset)
+{
+    SamplerConfig cfg;
+
+    switch (preset) {
+    case SamplerPreset::NearestClamp:
+        cfg.MagFilter = VK_FILTER_NEAREST;
+        cfg.MinFilter = VK_FILTER_NEAREST;
+        cfg.MipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        cfg.AddressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        cfg.AddressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        cfg.AddressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        return cfg;
+
+    case SamplerPreset::ShadowCompare:
+        cfg.AddressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        cfg.AddressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        cfg.AddressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        cfg.CompareEnable = VK_TRUE;
+        cfg.CompareOp = VK_COMPARE_OP_LESS;
+        cfg.MinLod = 0.0f;
+        cfg.MaxLod = 1.0f;
+        return cfg;
+
+    case SamplerPreset::LinearRepeat:
+    default:
+        return cfg;
+    }
+}
 
 Sampler::Sampler(Sampler&& other) noexcept
 {
@@ -66,3 +97,4 @@ std::pair<Sampler, CustomError> CreateSampler(
 }
 
 } // namespace yst::core
+

@@ -167,3 +167,4 @@ Window::Extent2D Window::GetFramebufferSize() const
 }
 
 } // namespace yst::ywin
+

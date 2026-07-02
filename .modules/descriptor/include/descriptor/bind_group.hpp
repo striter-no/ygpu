@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <utility>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
@@ -38,11 +39,87 @@ struct BindGroupEntry {
     VkSampler Sampler = VK_NULL_HANDLE;
 };
 
+enum class BindGroupPreset {
+    Empty = 0,
+};
+
 /// Configuration for a BindGroup: a layout + the actual resources bound
 /// to each slot.
 struct BindGroupConfig {
     BindGroupLayout* Layout = nullptr;
     std::vector<BindGroupEntry> Entries;
+};
+
+BindGroupConfig CreateConfig(BindGroupPreset preset);
+
+class BindGroupBuilder {
+public:
+    BindGroupBuilder() = default;
+    explicit BindGroupBuilder(BindGroupPreset preset)
+        : cfg_(CreateConfig(preset))
+    {
+    }
+    explicit BindGroupBuilder(BindGroupConfig config)
+        : cfg_(std::move(config))
+    {
+    }
+
+    BindGroupBuilder& WithLayout(BindGroupLayout& layout)
+    {
+        cfg_.Layout = &layout;
+        return *this;
+    }
+    BindGroupBuilder& AddEntry(const BindGroupEntry& entry)
+    {
+        cfg_.Entries.push_back(entry);
+        return *this;
+    }
+    BindGroupBuilder& AddBuffer(uint32_t binding, VkBuffer buffer,
+        VkDeviceSize offset = 0, VkDeviceSize range = VK_WHOLE_SIZE)
+    {
+        BindGroupEntry e;
+        e.Binding = binding;
+        e.Buffer = buffer;
+        e.Offset = offset;
+        e.Range = range;
+        cfg_.Entries.push_back(e);
+        return *this;
+    }
+    BindGroupBuilder& AddImage(uint32_t binding, VkImageView imageView,
+        VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+    {
+        BindGroupEntry e;
+        e.Binding = binding;
+        e.ImageView = imageView;
+        e.ImageLayout = imageLayout;
+        cfg_.Entries.push_back(e);
+        return *this;
+    }
+    BindGroupBuilder& AddSampler(uint32_t binding, VkSampler sampler)
+    {
+        BindGroupEntry e;
+        e.Binding = binding;
+        e.Sampler = sampler;
+        cfg_.Entries.push_back(e);
+        return *this;
+    }
+    BindGroupBuilder& AddCombinedTextureSampler(uint32_t binding,
+        VkImageView imageView, VkSampler sampler,
+        VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+    {
+        BindGroupEntry e;
+        e.Binding = binding;
+        e.ImageView = imageView;
+        e.Sampler = sampler;
+        e.ImageLayout = imageLayout;
+        cfg_.Entries.push_back(e);
+        return *this;
+    }
+
+    BindGroupConfig Build() const { return cfg_; }
+
+private:
+    BindGroupConfig cfg_;
 };
 
 /// Non-owning wrapper around a VkDescriptorSet.
@@ -80,3 +157,4 @@ std::pair<BindGroup, CustomError> AllocateBindGroup(
     Device& device, DescriptorPool& pool, BindGroupLayout& layout);
 
 } // namespace yst::core
+

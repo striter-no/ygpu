@@ -2,6 +2,16 @@
 
 namespace yst::core {
 
+PipelineLayoutConfig CreateConfig(PipelineLayoutPreset preset)
+{
+    PipelineLayoutConfig cfg;
+    switch (preset) {
+    case PipelineLayoutPreset::Empty:
+    default:
+        return cfg;
+    }
+}
+
 PipelineLayout::PipelineLayout(PipelineLayout&& other) noexcept
 {
     device_ = other.device_;
@@ -66,3 +76,4 @@ std::pair<PipelineLayout, CustomError> CreatePipelineLayout(
 }
 
 } // namespace yst::core
+

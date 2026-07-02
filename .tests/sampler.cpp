@@ -32,7 +32,7 @@ static int test_default_sampler()
         return 2;
     }
 
-    sampler.Destroy(*device);
+    sampler.Destroy();
     if (sampler.IsValid()) {
         std::cerr << "FAIL: Destroy did not null handle\n";
         return 3;
@@ -56,9 +56,9 @@ static int test_anisotropic_sampler()
         return 0;
     }
 
-    yst::core::SamplerConfig cfg;
-    cfg.AnisotropyEnable = VK_TRUE;
-    cfg.MaxAnisotropy = 8.0f;
+    auto cfg = yst::core::SamplerBuilder(yst::core::SamplerPreset::LinearRepeat)
+                   .WithAnisotropy(true, 8.0f)
+                   .Build();
 
     auto [sampler, err] = yst::core::CreateSampler(*device, cfg);
     if (err) {
@@ -66,7 +66,7 @@ static int test_anisotropic_sampler()
         return 1;
     }
 
-    sampler.Destroy(*device);
+    sampler.Destroy();
     return 0;
 }
 
@@ -78,11 +78,10 @@ static int test_compare_sampler()
         return 0;
     }
 
-    yst::core::SamplerConfig cfg;
-    cfg.CompareEnable = VK_TRUE;
-    cfg.CompareOp = VK_COMPARE_OP_LESS;
-    cfg.MinLod = 0.0f;
-    cfg.MaxLod = 1.0f;
+    auto cfg = yst::core::SamplerBuilder(yst::core::SamplerPreset::ShadowCompare)
+                   .WithCompare(true, VK_COMPARE_OP_LESS)
+                   .WithLodRange(0.0f, 1.0f)
+                   .Build();
 
     auto [sampler, err] = yst::core::CreateSampler(*device, cfg);
     if (err) {
@@ -90,7 +89,7 @@ static int test_compare_sampler()
         return 1;
     }
 
-    sampler.Destroy(*device);
+    sampler.Destroy();
     return 0;
 }
 
@@ -119,3 +118,4 @@ int main()
     std::cout << "test_sampler: all tests passed\n";
     return 0;
 }
+

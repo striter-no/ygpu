@@ -1,3 +1,4 @@
+// yst sampler module
 #pragma once
 #include <vulkan/vulkan.h>
 
@@ -9,7 +10,6 @@
 
 namespace yst::core {
 
-/// Owning wrapper around a VkSampler. RAII.
 class Sampler {
 public:
     VkSampler sampler = VK_NULL_HANDLE;
@@ -27,7 +27,6 @@ public:
 
 private:
     Device* device_ = nullptr;
-
     friend std::pair<Sampler, CustomError> CreateSampler(
         Device& device, const SamplerConfig& config);
 };
@@ -38,7 +37,7 @@ std::pair<Sampler, CustomError> CreateSampler(
 /// Convenience overload: linear filtering + repeat addressing.
 inline std::pair<Sampler, CustomError> CreateSampler(Device& device)
 {
-    return CreateSampler(device, SamplerConfig {});
+    return CreateSampler(device, CreateConfig(SamplerPreset::LinearRepeat));
 }
 
 } // namespace yst::core

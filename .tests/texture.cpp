@@ -26,10 +26,10 @@
 static int test_create_rejects_null_pixels()
 {
     yst::core::Device nullDevice;
-    yst::core::Texture2DConfig cfg;
-    cfg.Pixels = nullptr;
-    cfg.Width = 16;
-    cfg.Height = 16;
+    auto cfg = yst::core::Texture2DBuilder(yst::core::Texture2DPreset::Rgba8Unorm)
+                   .WithPixels(nullptr)
+                   .WithExtent(16, 16)
+                   .Build();
 
     auto [tex, err] = yst::core::CreateTexture2D(nullDevice, cfg);
     if (!err) {
@@ -47,11 +47,11 @@ static int test_create_rejects_null_pixels()
 static int test_create_rejects_zero_extent()
 {
     yst::core::Device nullDevice;
-    yst::core::Texture2DConfig cfg;
     static const uint8_t dummy[4] = { 0, 0, 0, 0 };
-    cfg.Pixels = dummy;
-    cfg.Width = 0;
-    cfg.Height = 0;
+    auto cfg = yst::core::Texture2DBuilder(yst::core::Texture2DPreset::Rgba8Unorm)
+                   .WithPixels(dummy)
+                   .WithExtent(0, 0)
+                   .Build();
 
     auto [tex, err] = yst::core::CreateTexture2D(nullDevice, cfg);
     if (!err) {
@@ -97,12 +97,10 @@ static int test_synthetic_texture_integration()
         }
     }
 
-    yst::core::Texture2DConfig cfg;
-    cfg.Pixels = pixels.data();
-    cfg.Width = W;
-    cfg.Height = H;
-    cfg.Channels = 4;
-    cfg.Format = VK_FORMAT_R8G8B8A8_UNORM;
+    auto cfg = yst::core::Texture2DBuilder(yst::core::Texture2DPreset::Rgba8Unorm)
+                   .WithPixels(pixels.data())
+                   .WithExtent(W, H)
+                   .Build();
 
     auto [tex, err] = yst::core::CreateTexture2D(*device, cfg);
     if (err) {
@@ -114,7 +112,7 @@ static int test_synthetic_texture_integration()
         return 2;
     }
 
-    tex.Destroy(*device);
+    tex.Destroy();
     if (tex.image.IsValid() || tex.view.IsValid() || tex.sampler.IsValid()) {
         std::cerr << "FAIL: Destroy did not null handles\n";
         return 3;
@@ -134,13 +132,11 @@ static int test_mipmapped_texture_integration()
     constexpr uint32_t W = 64, H = 64;
     std::vector<uint8_t> pixels(W * H * 4, 0xFF); // white
 
-    yst::core::Texture2DConfig cfg;
-    cfg.Pixels = pixels.data();
-    cfg.Width = W;
-    cfg.Height = H;
-    cfg.Channels = 4;
-    cfg.Format = VK_FORMAT_R8G8B8A8_UNORM;
-    cfg.GenerateMipmaps = true;
+    auto cfg = yst::core::Texture2DBuilder(yst::core::Texture2DPreset::Rgba8Unorm)
+                   .WithPixels(pixels.data())
+                   .WithExtent(W, H)
+                   .WithMipmaps(true)
+                   .Build();
 
     auto [tex, err] = yst::core::CreateTexture2D(*device, cfg);
     if (err) {
@@ -155,7 +151,7 @@ static int test_mipmapped_texture_integration()
         return 2;
     }
 
-    tex.Destroy(*device);
+    tex.Destroy();
     return 0;
 }
 
@@ -163,7 +159,7 @@ static int test_real_png_load_integration()
 {
     // Try to load a real PNG; skip if the stb_image shim is in use (the
     // shim always returns nullptr from stbi_load).
-    auto [pixels, loadErr] = yst::core::LoadStbImage("tests/assets/test.png");
+    auto [pixels, loadErr] = yst::core::LoadStbImage("./assets/textures/checkerboard.png");
     if (loadErr) {
         std::cout << "[skip] real PNG load failed (likely stb_image shim): "
                   << loadErr.str() << "\n";
@@ -176,13 +172,11 @@ static int test_real_png_load_integration()
         return 0;
     }
 
-    yst::core::Texture2DConfig cfg;
-    cfg.Pixels = pixels.bytes.data();
-    cfg.Width = static_cast<uint32_t>(pixels.Width);
-    cfg.Height = static_cast<uint32_t>(pixels.Height);
-    cfg.Channels = 4;
-    cfg.Format = VK_FORMAT_R8G8B8A8_SRGB;
-    cfg.GenerateMipmaps = true;
+    auto cfg = yst::core::Texture2DBuilder(yst::core::Texture2DPreset::MipmappedRgba8Srgb)
+                   .WithPixels(pixels.bytes.data())
+                   .WithExtent(static_cast<uint32_t>(pixels.Width),
+                       static_cast<uint32_t>(pixels.Height))
+                   .Build();
 
     auto [tex, err] = yst::core::CreateTexture2D(*device, cfg);
     if (err) {
@@ -190,7 +184,7 @@ static int test_real_png_load_integration()
         return 1;
     }
 
-    tex.Destroy(*device);
+    tex.Destroy();
     return 0;
 }
 

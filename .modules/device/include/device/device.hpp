@@ -52,3 +52,4 @@ inline std::pair<Device, CustomError> CreateDevice()
 }
 
 } // namespace yst::core
+

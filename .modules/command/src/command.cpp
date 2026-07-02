@@ -4,6 +4,20 @@
 
 namespace yst::core {
 
+CommandPoolConfig CreateConfig(CommandPoolPreset preset)
+{
+    CommandPoolConfig cfg;
+    switch (preset) {
+    case CommandPoolPreset::Transient:
+        cfg.Flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+        return cfg;
+    case CommandPoolPreset::Resettable:
+    default:
+        cfg.Flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        return cfg;
+    }
+}
+
 void CommandList::Begin(VkCommandBufferUsageFlags flags)
 {
     VkCommandBufferBeginInfo beginInfo {};
@@ -268,7 +282,7 @@ std::pair<VkCommandPool, CustomError> CreateCommandPool(
 
 std::pair<VkCommandPool, CustomError> CreateCommandPool(Device& device)
 {
-    CommandPoolConfig cfg;
+    auto cfg = CreateConfig(CommandPoolPreset::Resettable);
     cfg.QueueFamilyIndex = device.GraphicsQueueFamily;
     return CreateCommandPool(device, cfg);
 }
@@ -340,3 +354,4 @@ CustomError SubmitOneTimeCommands(Device& device,
 }
 
 } // namespace yst::core
+

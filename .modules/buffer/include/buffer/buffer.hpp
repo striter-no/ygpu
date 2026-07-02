@@ -1,4 +1,11 @@
+// yst buffer module
 #pragma once
+
+#include <cstddef>
+#include <cstdint>
+#include <utility>
+#include <vector>
+
 #include <device/device.hpp>
 #include <errors.hpp>
 #include <vk_mem_alloc.h>
@@ -6,31 +13,113 @@
 
 namespace yst::core {
 
-/// Layer 2 configuration for a VMA-allocated buffer.
+class Buffer;
+
+/// Named presets for fast, common BufferConfig defaults.
+enum class BufferPreset {
+    Empty = 0,
+    Uniform,
+    Vertex,
+    Index,
+    Staging,
+};
+
+/// Plain data configuration for a buffer. Callers may use CreateConfig(preset)
+/// for defaults and then modify fields directly, or use BufferBuilder when a
+/// chainable API is clearer.
 struct BufferConfig {
     VkDeviceSize Size = 0;
     VkBufferUsageFlags Usage = 0;
-
     VkSharingMode SharingMode = VK_SHARING_MODE_EXCLUSIVE;
     std::vector<uint32_t> QueueFamilies;
-
     VmaMemoryUsage MemoryUsage = VMA_MEMORY_USAGE_AUTO;
     VmaAllocationCreateFlags AllocationFlags = 0;
     VkMemoryPropertyFlags RequiredMemoryFlags = 0;
     VkMemoryPropertyFlags PreferredMemoryFlags = 0;
-
-    /// Convenience: configure as a persistently-mapped, host-writable
-    /// staging buffer.
-    BufferConfig& HostVisible() noexcept
-    {
-        AllocationFlags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
-            | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        return *this;
-    }
+    bool HostVisible = false;
 };
 
-/// Owning wrapper around a Vma-allocated buffer. RAII: destruction
-/// automatically frees the underlying VkBuffer + VmaAllocation.
+BufferConfig CreateConfig(BufferPreset preset);
+
+std::pair<Buffer, CustomError> CreateBuffer(
+    Device& device, const BufferConfig& config);
+
+/// Fluent builder for BufferConfig. Build() returns a config only; resource
+/// creation stays in CreateBuffer(device, config).
+class BufferBuilder {
+public:
+    BufferBuilder() = default;
+    explicit BufferBuilder(BufferPreset preset)
+        : cfg_(CreateConfig(preset))
+    {
+    }
+    explicit BufferBuilder(BufferConfig config)
+        : cfg_(std::move(config))
+    {
+    }
+
+    BufferBuilder& WithSize(VkDeviceSize size)
+    {
+        cfg_.Size = size;
+        return *this;
+    }
+    BufferBuilder& WithUsage(VkBufferUsageFlags usage)
+    {
+        cfg_.Usage = usage;
+        return *this;
+    }
+    BufferBuilder& AddUsageFlags(VkBufferUsageFlags usage)
+    {
+        cfg_.Usage |= usage;
+        return *this;
+    }
+    BufferBuilder& WithSharingMode(VkSharingMode mode)
+    {
+        cfg_.SharingMode = mode;
+        return *this;
+    }
+    BufferBuilder& WithQueueFamilies(std::vector<uint32_t> families)
+    {
+        cfg_.QueueFamilies = std::move(families);
+        return *this;
+    }
+    BufferBuilder& WithMemoryUsage(VmaMemoryUsage usage)
+    {
+        cfg_.MemoryUsage = usage;
+        return *this;
+    }
+    BufferBuilder& WithAllocationFlags(VmaAllocationCreateFlags flags)
+    {
+        cfg_.AllocationFlags = flags;
+        cfg_.HostVisible = (flags & VMA_ALLOCATION_CREATE_MAPPED_BIT) != 0;
+        return *this;
+    }
+    BufferBuilder& WithRequiredMemoryFlags(VkMemoryPropertyFlags flags)
+    {
+        cfg_.RequiredMemoryFlags = flags;
+        return *this;
+    }
+    BufferBuilder& WithPreferredMemoryFlags(VkMemoryPropertyFlags flags)
+    {
+        cfg_.PreferredMemoryFlags = flags;
+        return *this;
+    }
+
+    /// Configure as a persistently-mapped, host-writable buffer.
+    BufferBuilder& HostVisible()
+    {
+        cfg_.AllocationFlags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+            | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        cfg_.HostVisible = true;
+        return *this;
+    }
+
+    BufferConfig Build() const { return cfg_; }
+
+private:
+    BufferConfig cfg_;
+};
+
 class Buffer {
 public:
     VkBuffer buffer = VK_NULL_HANDLE;
@@ -43,10 +132,7 @@ public:
     Buffer(Buffer&& other) noexcept;
     Buffer& operator=(Buffer&& other) noexcept;
 
-    /// Free the buffer. Safe to call multiple times; safe on a moved-from
-    /// instance. Uses the device stored at creation time.
     void Destroy();
-
     CustomError UploadData(const void* data, size_t dataSize);
 
     bool IsMapped() const noexcept { return mappedData_ != nullptr; }
@@ -64,41 +150,43 @@ private:
         Device& device, const BufferConfig& config);
 };
 
-std::pair<Buffer, CustomError> CreateBuffer(
-    Device& device, const BufferConfig& config);
-
-// ---- Convenience overloads (Layer 1) ------------------------------------
-// Each helper constructs a BufferConfig with sensible defaults for the
-// given use case. All return host-visible, persistently-mapped buffers
-// (i.e. CPU-writable via UploadData) unless noted otherwise.
-
-/// Uniform buffer (UBO): host-visible, persistently mapped.
-std::pair<Buffer, CustomError> CreateUniformBuffer(Device& device, VkDeviceSize size);
-
-/// Vertex buffer: host-visible by default for simple examples. Pass
-/// hostVisible=false to allocate GPU-local memory (requires staging).
-std::pair<Buffer, CustomError> CreateVertexBuffer(Device& device, VkDeviceSize size,
-    bool hostVisible = true);
-
-/// Index buffer: same defaults as vertex buffer.
-std::pair<Buffer, CustomError> CreateIndexBuffer(Device& device, VkDeviceSize size,
-    bool hostVisible = true);
-
-/// Staging buffer: transfer-src + host-visible, used as the source of
-/// GPU-side copies (e.g. uploading to a GPU-local vertex buffer or image).
-std::pair<Buffer, CustomError> CreateStagingBuffer(Device& device, VkDeviceSize size);
-
-/// Backwards-compatible overload: builds a BufferConfig from the most
-/// common subset of parameters.
-inline std::pair<Buffer, CustomError> CreateBuffer(
-    Device& device, VkDeviceSize size, VkBufferUsageFlags usage,
-    bool hostVisible = false)
+inline std::pair<Buffer, CustomError> CreateUniformBuffer(Device& device, VkDeviceSize size)
 {
-    BufferConfig cfg;
+    auto cfg = CreateConfig(BufferPreset::Uniform);
     cfg.Size = size;
-    cfg.Usage = usage;
-    if (hostVisible)
-        cfg.HostVisible();
+    return CreateBuffer(device, cfg);
+}
+
+inline std::pair<Buffer, CustomError> CreateVertexBuffer(Device& device, VkDeviceSize size,
+    bool hostVisible = true)
+{
+    auto cfg = CreateConfig(BufferPreset::Vertex);
+    cfg.Size = size;
+    if (hostVisible) {
+        cfg.AllocationFlags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+            | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        cfg.HostVisible = true;
+    }
+    return CreateBuffer(device, cfg);
+}
+
+inline std::pair<Buffer, CustomError> CreateIndexBuffer(Device& device, VkDeviceSize size,
+    bool hostVisible = true)
+{
+    auto cfg = CreateConfig(BufferPreset::Index);
+    cfg.Size = size;
+    if (hostVisible) {
+        cfg.AllocationFlags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+            | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        cfg.HostVisible = true;
+    }
+    return CreateBuffer(device, cfg);
+}
+
+inline std::pair<Buffer, CustomError> CreateStagingBuffer(Device& device, VkDeviceSize size)
+{
+    auto cfg = CreateConfig(BufferPreset::Staging);
+    cfg.Size = size;
     return CreateBuffer(device, cfg);
 }
 

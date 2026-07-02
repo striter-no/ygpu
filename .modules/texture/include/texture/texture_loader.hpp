@@ -23,3 +23,4 @@ struct LoadedPixels {
 std::pair<LoadedPixels, CustomError> LoadStbImage(const std::string& path);
 
 } // namespace yst::core
+

@@ -146,3 +146,4 @@ const char* yst::CustomError::name() const
 {
     return ErrorName(code);
 }
+

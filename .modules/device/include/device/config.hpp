@@ -16,7 +16,8 @@ enum Backend { BACKEND_VULKAN,
 
 /// Named presets for typical DeviceConfig profiles.
 enum Preset {
-    DEFAULT_CONFIG = 0, ///< Discrete GPU if available, debug enabled.
+    DEFAULT_CONFIG = 0, ///< Discrete GPU if available, debug off.
+    DEBUG_CONFIG, ///< Default GPU selection with validation/debug enabled.
     HEADLESS_CONFIG, ///< Integrated if available, debug off.
     HIGH_PERFORMANCE, ///< Force discrete, require Vulkan 1.3, portability off.
     LOW_POWER, ///< Prefer integrated, allow 1.1 minimum.
@@ -84,12 +85,13 @@ struct DeviceConfig {
     /// re-checks present support against the chosen surface.
     bool RequirePresent = false;
 
-    /// Enable validation layers + debug messenger. On by default in builds
-    /// that opt into debug; release builds should flip this off.
-    bool EnableDebug = true;
+    /// Enable validation layers + debug messenger. Off in DEFAULT_CONFIG,
+    /// on in DEBUG_CONFIG.
+    bool EnableDebug = false;
 };
 
 /// Resolve a named preset into a fully-populated DeviceConfig.
 DeviceConfig CreateConfig(yst::gpuc::Preset preset);
 
 } // namespace yst::core
+

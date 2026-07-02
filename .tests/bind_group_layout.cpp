@@ -120,7 +120,7 @@ static int test_create_bind_group_layout_integration()
         return 2;
     }
 
-    layout.Destroy(*device);
+    layout.Destroy();
     if (layout.layout != VK_NULL_HANDLE) {
         std::cerr << "FAIL: Destroy did not null the handle\n";
         return 3;
@@ -155,3 +155,4 @@ int main()
     std::cout << "test_bind_group_layout: all tests passed\n";
     return 0;
 }
+

@@ -95,3 +95,4 @@ enum class ErrorCode : int {
 const char* ErrorName(int code);
 
 } // namespace yst
+

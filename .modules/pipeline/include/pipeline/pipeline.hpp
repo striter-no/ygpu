@@ -4,13 +4,18 @@
 #include <descriptor/pipeline_layout.hpp>
 #include <device/device.hpp>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace yst::core {
 
-// Forward declaration so the friend declaration inside GraphicsPipeline
-// (which references CreateGraphicsPipeline's signature) can name the type.
 struct PipelineConfig;
+
+enum class PipelinePreset {
+    DefaultGraphics = 0,
+    OpaqueGraphics,
+};
+
 
 struct GraphicsPipeline {
     VkPipeline pipeline = VK_NULL_HANDLE;
@@ -83,18 +88,71 @@ struct PipelineConfig {
     VkPipeline BasePipelineHandle = VK_NULL_HANDLE;
     int32_t BasePipelineIndex = -1;
 
-    PipelineConfig& AddOpaqueColorAttachment() noexcept
+};
+
+PipelineConfig CreateConfig(PipelinePreset preset);
+
+class PipelineBuilder {
+public:
+    PipelineBuilder() = default;
+    explicit PipelineBuilder(PipelinePreset preset)
+        : cfg_(CreateConfig(preset))
+    {
+    }
+    explicit PipelineBuilder(PipelineConfig config)
+        : cfg_(std::move(config))
+    {
+    }
+
+    PipelineBuilder& WithPipelineLayout(PipelineLayout& layout)
+    {
+        cfg_.PipelineLayoutOverride = &layout;
+        return *this;
+    }
+    PipelineBuilder& WithRenderPass(VkRenderPass renderPass, uint32_t subpass = 0)
+    {
+        cfg_.renderPass = renderPass;
+        cfg_.Subpass = subpass;
+        return *this;
+    }
+    PipelineBuilder& WithVertexShaderSpv(std::vector<uint32_t> spv)
+    {
+        cfg_.vertexShaderSpv = std::move(spv);
+        return *this;
+    }
+    PipelineBuilder& WithFragmentShaderSpv(std::vector<uint32_t> spv)
+    {
+        cfg_.fragmentShaderSpv = std::move(spv);
+        return *this;
+    }
+    PipelineBuilder& AddVertexBinding(const VkVertexInputBindingDescription& binding)
+    {
+        cfg_.bindings.push_back(binding);
+        return *this;
+    }
+    PipelineBuilder& AddVertexAttribute(const VkVertexInputAttributeDescription& attribute)
+    {
+        cfg_.attributes.push_back(attribute);
+        return *this;
+    }
+    PipelineBuilder& AddOpaqueColorAttachment()
     {
         VkPipelineColorBlendAttachmentState att {};
         att.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
             | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
         att.blendEnable = VK_FALSE;
-        ColorBlendAttachments.push_back(att);
+        cfg_.ColorBlendAttachments.push_back(att);
         return *this;
     }
+
+    PipelineConfig Build() const { return cfg_; }
+
+private:
+    PipelineConfig cfg_;
 };
 
 std::pair<GraphicsPipeline, CustomError> CreateGraphicsPipeline(
     Device& device, const PipelineConfig& config);
 
 } // namespace yst::core
+

@@ -96,9 +96,7 @@ static int test_full_lifecycle_integration()
     }
 
     // 3. Buffer to bind (just needs to exist; contents don't matter).
-    auto [buffer, bufErr] = CreateBuffer(
-        *device, sizeof(float) * 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        /*hostVisible=*/true);
+    auto [buffer, bufErr] = CreateUniformBuffer(*device, sizeof(float) * 16);
     if (bufErr) {
         std::cerr << "FAIL: buffer creation: " << bufErr.str() << "\n";
         return 3;
@@ -159,9 +157,9 @@ static int test_full_lifecycle_integration()
 
     // 8. Tear everything down. bg2 is freed implicitly by pool.Destroy.
     bg2.set = VK_NULL_HANDLE; // pool owns it
-    buffer.Destroy(*device);
-    pool.Destroy(*device);
-    layout.Destroy(*device);
+    buffer.Destroy();
+    pool.Destroy();
+    layout.Destroy();
     return 0;
 }
 
@@ -215,9 +213,7 @@ static int test_multi_binding_ubo_and_texture_integration()
     }
 
     // 3. UBO buffer.
-    auto [ubo, uboErr] = CreateBuffer(
-        *device, sizeof(float) * 16,
-        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, /*hostVisible=*/true);
+    auto [ubo, uboErr] = CreateUniformBuffer(*device, sizeof(float) * 16);
     if (uboErr) {
         std::cerr << "FAIL: ubo: " << uboErr.str() << "\n";
         return 3;
@@ -225,8 +221,7 @@ static int test_multi_binding_ubo_and_texture_integration()
 
     // 4. A small texture (1x1 is enough to exercise the path; we don't
     //    sample from it in this test).
-    ImageConfig imgCfg;
-    imgCfg.As2DTexture(1, 1);
+    auto imgCfg = ImageBuilder(ImagePreset::Texture2D).As2DTexture(1, 1).Build();
     auto [image, imgErr] = CreateImage(*device, imgCfg);
     if (imgErr) {
         std::cerr << "FAIL: image: " << imgErr.str() << "\n";
@@ -279,12 +274,12 @@ static int test_multi_binding_ubo_and_texture_integration()
     //    the test run) would have flagged it. The caller should run tests
     //    with validation layers on to catch regressions.
     bg.set = VK_NULL_HANDLE;
-    sampler.Destroy(*device);
-    view.Destroy(*device);
-    image.Destroy(*device);
-    ubo.Destroy(*device);
-    pool.Destroy(*device);
-    layout.Destroy(*device);
+    sampler.Destroy();
+    view.Destroy();
+    image.Destroy();
+    ubo.Destroy();
+    pool.Destroy();
+    layout.Destroy();
     return 0;
 }
 
@@ -319,3 +314,4 @@ int main()
     std::cout << "test_bind_group: all tests passed\n";
     return 0;
 }
+

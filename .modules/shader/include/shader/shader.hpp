@@ -1,16 +1,18 @@
+// yst shader module — Builder pattern (v4)
 #pragma once
-#include <device/device.hpp>
-#include <errors.hpp>
+
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <device/device.hpp>
+#include <errors.hpp>
 #include <vulkan/vulkan_core.h>
 
 #include "config.hpp"
 
 namespace yst::core {
 
-/// Owning wrapper around a VkShaderModule. RAII.
 class ShaderModule {
 public:
     VkShaderModule module = VK_NULL_HANDLE;
@@ -26,18 +28,17 @@ public:
     ShaderModule& operator=(ShaderModule&& other) noexcept;
 
     void Destroy();
-
     VkPipelineShaderStageCreateInfo ToStageCreateInfo() const noexcept;
 
 private:
     Device* device_ = nullptr;
-
     friend std::pair<ShaderModule, CustomError> CreateShaderModule(
         Device& device, const ShaderModuleConfig& config);
 };
 
 std::pair<ShaderModule, CustomError> CreateShaderModule(
     Device& device, const ShaderModuleConfig& config);
+
 
 std::pair<std::vector<uint32_t>, CustomError> LoadSpvFile(
     const std::string& path);

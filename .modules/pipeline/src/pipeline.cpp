@@ -4,6 +4,26 @@
 
 namespace yst::core {
 
+PipelineConfig CreateConfig(PipelinePreset preset)
+{
+    PipelineConfig cfg;
+
+    switch (preset) {
+    case PipelinePreset::OpaqueGraphics: {
+        VkPipelineColorBlendAttachmentState att {};
+        att.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
+            | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        att.blendEnable = VK_FALSE;
+        cfg.ColorBlendAttachments.push_back(att);
+        return cfg;
+    }
+
+    case PipelinePreset::DefaultGraphics:
+    default:
+        return cfg;
+    }
+}
+
 GraphicsPipeline::GraphicsPipeline(GraphicsPipeline&& other) noexcept
 {
     device_ = other.device_;
@@ -334,3 +354,4 @@ std::pair<GraphicsPipeline, CustomError> CreateGraphicsPipeline(
 }
 
 } // namespace yst::core
+

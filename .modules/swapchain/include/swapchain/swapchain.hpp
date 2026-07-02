@@ -79,6 +79,13 @@ public:
 
 std::pair<Swapchain, CustomError> CreateSwapchain(
     Device& device, const yst::ywin::Window& window,
-    SwapchainConfig config = SwapchainConfig {});
+    SwapchainConfig config);
+
+inline std::pair<Swapchain, CustomError> CreateSwapchain(
+    Device& device, const yst::ywin::Window& window)
+{
+    return CreateSwapchain(device, window, CreateConfig(SwapchainPreset::Default));
+}
 
 } // namespace yst::core
+

@@ -2,9 +2,17 @@
 #include <vulkan/vulkan.h>
 
 #include <optional>
+#include <utility>
 #include <vector>
 
 namespace yst::core {
+
+enum class SwapchainPreset {
+    Default = 0,
+    Mailbox,
+    Immediate,
+    WithDepth,
+};
 
 /// Render-pass attachment description for the swapchain's color image.
 /// Defaults match the historical hardcoded behaviour (CLEAR on load,
@@ -75,4 +83,56 @@ struct SwapchainConfig {
     VkImageView DepthImageViewOverride = VK_NULL_HANDLE;
 };
 
+SwapchainConfig CreateConfig(SwapchainPreset preset);
+
+class SwapchainBuilder {
+public:
+    SwapchainBuilder() = default;
+    explicit SwapchainBuilder(SwapchainPreset preset)
+        : cfg_(CreateConfig(preset))
+    {
+    }
+    explicit SwapchainBuilder(SwapchainConfig config)
+        : cfg_(std::move(config))
+    {
+    }
+
+    SwapchainBuilder& WithMaxFramesInFlight(uint32_t frames)
+    {
+        cfg_.MaxFramesInFlight = frames;
+        return *this;
+    }
+    SwapchainBuilder& WithPresentMode(VkPresentModeKHR mode)
+    {
+        cfg_.PresentMode = mode;
+        return *this;
+    }
+    SwapchainBuilder& WithPreferredFormat(VkFormat format, VkColorSpaceKHR colorSpace)
+    {
+        cfg_.PreferredFormat = format;
+        cfg_.PreferredColorSpace = colorSpace;
+        return *this;
+    }
+    SwapchainBuilder& WithClearColor(float r, float g, float b, float a)
+    {
+        cfg_.ClearColor[0] = r;
+        cfg_.ClearColor[1] = g;
+        cfg_.ClearColor[2] = b;
+        cfg_.ClearColor[3] = a;
+        return *this;
+    }
+    SwapchainBuilder& WithDepth(VkFormat format, VkImageView view = VK_NULL_HANDLE)
+    {
+        cfg_.Depth.Format = format;
+        cfg_.DepthImageViewOverride = view;
+        return *this;
+    }
+
+    SwapchainConfig Build() const { return cfg_; }
+
+private:
+    SwapchainConfig cfg_;
+};
+
 } // namespace yst::core
+

@@ -17,8 +17,9 @@
 static int test_create_rejects_zero_extent()
 {
     yst::core::Device nullDevice;
-    yst::core::ImageConfig cfg;
-    cfg.Extent = { 0, 0, 0 };
+    auto cfg = yst::core::ImageBuilder(yst::core::ImagePreset::Texture2D)
+                   .WithExtent(0, 0, 0)
+                   .Build();
 
     auto [img, err] = yst::core::CreateImage(nullDevice, cfg);
     if (!err) {
@@ -60,8 +61,9 @@ static int test_full_lifecycle_integration()
         return 0;
     }
 
-    yst::core::ImageConfig cfg;
-    cfg.As2DTexture(64, 64);
+    auto cfg = yst::core::ImageBuilder(yst::core::ImagePreset::Texture2D)
+                   .As2DTexture(64, 64)
+                   .Build();
     auto [image, imgErr] = yst::core::CreateImage(*device, cfg);
     if (imgErr) {
         std::cerr << "FAIL: image creation: " << imgErr.str() << "\n";
@@ -90,8 +92,8 @@ static int test_full_lifecycle_integration()
         return 6;
     }
 
-    view.Destroy(*device);
-    image.Destroy(*device);
+    view.Destroy();
+    image.Destroy();
     if (image.IsValid()) {
         std::cerr << "FAIL: Destroy did not null image handle\n";
         return 7;
@@ -129,3 +131,4 @@ int main()
     std::cout << "test_image: all tests passed\n";
     return 0;
 }
+

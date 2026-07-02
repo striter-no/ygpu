@@ -44,8 +44,8 @@ static int test_create_shader_module_rejects_empty()
     // No device needed — CreateShaderModule validates config before
     // touching Vulkan, so passing a null device is fine for this path.
     yst::core::Device nullDevice;
-    yst::core::ShaderModuleConfig cfg;
-    cfg.Stage = VK_SHADER_STAGE_VERTEX_BIT;
+    auto cfg = yst::core::ShaderModuleBuilder(yst::core::ShaderModulePreset::Vertex)
+                   .Build();
     // Leave Spirv empty.
 
     auto [mod, err] = yst::core::CreateShaderModule(nullDevice, cfg);
@@ -78,10 +78,10 @@ static int test_create_shader_module_integration()
         return 0;
     }
 
-    yst::core::ShaderModuleConfig cfg;
-    cfg.Stage = VK_SHADER_STAGE_VERTEX_BIT;
-    cfg.Spirv = std::move(*maybeSpv);
-    cfg.EntryPoint = "main";
+    auto cfg = yst::core::ShaderModuleBuilder(yst::core::ShaderModulePreset::Vertex)
+                   .WithSpirv(std::move(*maybeSpv))
+                   .WithEntryPoint("main")
+                   .Build();
 
     auto [mod, err] = yst::core::CreateShaderModule(*device, cfg);
     if (err) {
@@ -110,7 +110,7 @@ static int test_create_shader_module_integration()
         return 5;
     }
 
-    mod.Destroy(*device);
+    mod.Destroy();
     if (mod.module != VK_NULL_HANDLE) {
         std::cerr << "FAIL: Destroy did not null the handle\n";
         return 6;
@@ -146,3 +146,4 @@ int main()
     std::cout << "test_shader_module: all tests passed\n";
     return 0;
 }
+

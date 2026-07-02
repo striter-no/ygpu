@@ -1,4 +1,5 @@
 #pragma once
+#include <utility>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
@@ -8,10 +9,50 @@
 
 namespace yst::core {
 
+enum class PipelineLayoutPreset {
+    Empty = 0,
+};
+
 struct PipelineLayoutConfig {
     std::vector<BindGroupLayout*> BindGroupLayouts;
     std::vector<VkPushConstantRange> PushConstantRanges;
     VkPipelineLayoutCreateFlags Flags = 0;
+};
+
+PipelineLayoutConfig CreateConfig(PipelineLayoutPreset preset);
+
+class PipelineLayoutBuilder {
+public:
+    PipelineLayoutBuilder() = default;
+    explicit PipelineLayoutBuilder(PipelineLayoutPreset preset)
+        : cfg_(CreateConfig(preset))
+    {
+    }
+    explicit PipelineLayoutBuilder(PipelineLayoutConfig config)
+        : cfg_(std::move(config))
+    {
+    }
+
+    PipelineLayoutBuilder& AddBindGroupLayout(BindGroupLayout& layout)
+    {
+        cfg_.BindGroupLayouts.push_back(&layout);
+        return *this;
+    }
+    PipelineLayoutBuilder& AddPushConstantRange(const VkPushConstantRange& range)
+    {
+        cfg_.PushConstantRanges.push_back(range);
+        return *this;
+    }
+    PipelineLayoutBuilder& WithFlags(VkPipelineLayoutCreateFlags flags)
+    {
+        cfg_.Flags = flags;
+        return *this;
+    }
+
+    PipelineLayoutConfig Build() const { return cfg_; }
+
+private:
+    PipelineLayoutConfig cfg_;
 };
 
 /// Owning wrapper around a VkPipelineLayout. RAII.

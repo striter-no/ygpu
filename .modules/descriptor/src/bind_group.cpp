@@ -7,6 +7,16 @@
 
 namespace yst::core {
 
+BindGroupConfig CreateConfig(BindGroupPreset preset)
+{
+    BindGroupConfig cfg;
+    switch (preset) {
+    case BindGroupPreset::Empty:
+    default:
+        return cfg;
+    }
+}
+
 CustomError BindGroup::Free(Device& device, DescriptorPool& pool)
 {
     if (set == VK_NULL_HANDLE || pool.pool == VK_NULL_HANDLE)
@@ -223,3 +233,4 @@ std::pair<BindGroup, CustomError> CreateBindGroup(
 }
 
 } // namespace yst::core
+

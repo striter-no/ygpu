@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <utility>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
@@ -10,10 +11,16 @@
 
 namespace yst::core {
 
+enum class BindGroupLayoutPreset {
+    Empty = 0,
+};
+
 struct BindGroupLayoutConfig {
     std::vector<BindingLayoutEntry> Entries;
     VkDescriptorSetLayoutCreateFlags Flags = 0;
 };
+
+BindGroupLayoutConfig CreateConfig(BindGroupLayoutPreset preset);
 
 /// Owning wrapper around a VkDescriptorSetLayout. RAII.
 class BindGroupLayout {
@@ -39,23 +46,25 @@ private:
 
     friend std::pair<BindGroupLayout, CustomError> CreateBindGroupLayout(
         Device& device, const BindGroupLayoutConfig& config);
-    friend class BindGroupLayoutBuilder;
 };
 
 std::pair<BindGroupLayout, CustomError> CreateBindGroupLayout(
     Device& device, const BindGroupLayoutConfig& config);
 
-/// Fluent builder for BindGroupLayout. Mirrors wgpu::BindGroupLayoutDescriptor
-/// but with a chainable API so callers don't have to construct temporary
-/// BindingLayoutEntry objects by hand.
-///
-/// Usage:
-///   auto [bgl, err] = BindGroupLayoutBuilder()
-///       .AddUniformBuffer(0, ShaderStageBits::Vertex)
-///       .AddCombinedTextureSampler(1, ShaderStageBits::Fragment)
-///       .Build(device);
+/// Fluent builder for BindGroupLayoutConfig. Build() returns a config only;
+/// CreateBindGroupLayout(device, config) creates the Vulkan object.
 class BindGroupLayoutBuilder {
 public:
+    BindGroupLayoutBuilder() = default;
+    explicit BindGroupLayoutBuilder(BindGroupLayoutPreset preset)
+        : config_(CreateConfig(preset))
+    {
+    }
+    explicit BindGroupLayoutBuilder(BindGroupLayoutConfig config)
+        : config_(std::move(config))
+    {
+    }
+
     BindGroupLayoutBuilder& AddUniformBuffer(uint32_t binding,
         VkShaderStageFlags visibility = ShaderStageBits::AllGraphics)
     {
@@ -114,11 +123,7 @@ public:
         return *this;
     }
 
-    std::pair<BindGroupLayout, CustomError> Build(Device& device)
-    {
-        return CreateBindGroupLayout(device, config_);
-    }
-
+    BindGroupLayoutConfig Build() const { return config_; }
     const BindGroupLayoutConfig& Config() const { return config_; }
 
 private:

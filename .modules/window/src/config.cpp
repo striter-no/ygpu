@@ -40,3 +40,4 @@ WindowConfig CreateConfig(ywinc::Preset preset)
 }
 
 } // namespace yst::ywin
+

@@ -12,6 +12,12 @@ DeviceConfig CreateConfig(yst::gpuc::Preset preset)
     switch (preset) {
     case yst::gpuc::DEFAULT_CONFIG:
         cfg.PreferIntegratedGPU = false;
+        cfg.EnableDebug = false;
+        cfg.MinVulkanVersion = { 1, 2, 0 };
+        return cfg;
+
+    case yst::gpuc::DEBUG_CONFIG:
+        cfg.PreferIntegratedGPU = false;
         cfg.EnableDebug = true;
         cfg.MinVulkanVersion = { 1, 2, 0 };
         return cfg;
@@ -45,3 +51,4 @@ DeviceConfig CreateConfig(yst::gpuc::Preset preset)
 }
 
 } // namespace yst::core
+

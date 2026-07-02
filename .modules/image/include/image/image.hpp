@@ -1,3 +1,4 @@
+// yst image module
 #pragma once
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
@@ -10,8 +11,6 @@
 
 namespace yst::core {
 
-/// Owning wrapper around a Vma-allocated VkImage. RAII: destruction
-/// automatically frees the underlying VkImage + VmaAllocation.
 class Image {
 public:
     VkImage image = VK_NULL_HANDLE;
@@ -28,8 +27,6 @@ public:
     Image(Image&& other) noexcept;
     Image& operator=(Image&& other) noexcept;
 
-    /// Free the image. Safe to call multiple times; safe on a moved-from
-    /// instance. Uses the device stored at creation time.
     void Destroy();
     bool IsValid() const noexcept { return image != VK_NULL_HANDLE; }
 
@@ -44,7 +41,6 @@ private:
 std::pair<Image, CustomError> CreateImage(
     Device& device, const ImageConfig& config);
 
-/// Owning wrapper around a VkImageView. RAII.
 class ImageView {
 public:
     VkImageView view = VK_NULL_HANDLE;

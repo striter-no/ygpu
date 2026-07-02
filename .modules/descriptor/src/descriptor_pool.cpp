@@ -2,6 +2,19 @@
 
 namespace yst::core {
 
+DescriptorPoolConfig CreateConfig(DescriptorPoolPreset preset)
+{
+    DescriptorPoolConfig cfg;
+    switch (preset) {
+    case DescriptorPoolPreset::Manual:
+        cfg.PoolSizes.clear();
+        return cfg;
+    case DescriptorPoolPreset::Default:
+    default:
+        return cfg;
+    }
+}
+
 DescriptorPool::DescriptorPool(DescriptorPool&& other) noexcept
 {
     device_ = other.device_;
@@ -75,3 +88,4 @@ std::pair<DescriptorPool, CustomError> CreateDescriptorPool(
 }
 
 } // namespace yst::core
+
