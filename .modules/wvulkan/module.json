@@ -10,7 +10,7 @@
   },
 
   "code": {
-    "sources": ["**/*.cpp"],
+    "sources": ["**/*.cpp", "**/*.c"],
     "output": "./bin/wvulkan",
     "includes": ["include"]
   },

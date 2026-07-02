@@ -17,7 +17,7 @@
     "sources": ["**/*.cpp"],
     "output": "./bin/main",
     "includes": ["include"],
-    "libraries": ["vulkan", "glfw"]
+    "libraries": ["glfw"]
   },
 
   "target": "valgrind"

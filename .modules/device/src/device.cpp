@@ -39,14 +39,16 @@ std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config)
 {
     Device outDevice;
 
-    // 1. Reject unsupported backends up-front. The Backend enum exists in
-    //    the public API precisely so callers can opt into MOCK when it
-    //    becomes available — but for now anything other than Vulkan is a
-    //    hard error rather than a silent fallthrough.
     if (config.PreferredBackend != yst::gpuc::BACKEND_VULKAN) {
         return { std::move(outDevice),
             CustomError(ErrorCode::UnsupportedBackend,
                 "Only BACKEND_VULKAN is implemented in this build") };
+    }
+
+    if (volkInitialize() != VK_SUCCESS) {
+        return { std::move(outDevice),
+            CustomError(ErrorCode::InstanceCreationFailed, // Или заведите новый ErrorCode::VolkInitializeFailed
+                "Failed to initialize volk. Is Vulkan driver installed on the system?") };
     }
 
     // 2. Instance.
@@ -59,6 +61,8 @@ std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config)
     }
     outDevice.vkbInstance = inst_ret.value();
     outDevice.Instance = outDevice.vkbInstance.instance;
+
+    volkLoadInstance(outDevice.Instance);
 
     // 3. Physical device selection.
     vkb::PhysicalDeviceSelector selector { outDevice.vkbInstance };
@@ -73,11 +77,8 @@ std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config)
                             .prefer_gpu_device_type(gpuPreference)
                             .require_present(config.RequirePresent);
 
-    // Required device extensions. We must copy into a stable vector because
-    // vkb stores pointers, not values.
     std::vector<const char*> requiredExts;
     if (config.DeviceExtensions.empty()) {
-        // Backwards-compatible default if caller clears the list.
         requiredExts.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     } else {
         requiredExts = config.DeviceExtensions;
@@ -107,6 +108,7 @@ std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config)
     }
     outDevice.vkbDevice = dev_ret.value();
     outDevice.LogicalDevice = outDevice.vkbDevice.device;
+    volkLoadDevice(outDevice.LogicalDevice);
 
     // 5. Graphics queue.
     auto graphicsQueue_ret = outDevice.vkbDevice.get_queue(vkb::QueueType::graphics);
@@ -119,16 +121,18 @@ std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config)
     outDevice.GraphicsQueue = graphicsQueue_ret.value();
     outDevice.GraphicsQueueFamily = graphicsQueueFam_ret.value();
 
-    // 6. VMA allocator. Use the same API version we negotiated with
-    //    VkBootstrap so VMA's internal function pointer table matches the
-    //    device's actual capabilities (this used to be hardcoded to 1.0
-    //    while the device required 1.2 — a real bug masked by the fact that
-    //    VMA degrades gracefully when an entry point is missing).
+    // 6. VMA allocator.
+    VmaVulkanFunctions vulkanFunctions = {};
+    vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+    vulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+
     VmaAllocatorCreateInfo allocatorInfo {};
     allocatorInfo.physicalDevice = outDevice.PhysicalDevice;
     allocatorInfo.device = outDevice.LogicalDevice;
     allocatorInfo.instance = outDevice.Instance;
     allocatorInfo.vulkanApiVersion = config.MinVulkanVersion.Pack();
+    // Передаем адреса диспетчеров в VMA, остальное VMA найдет сам:
+    allocatorInfo.pVulkanFunctions = &vulkanFunctions;
 
     if (vmaCreateAllocator(&allocatorInfo, &outDevice.Allocator) != VK_SUCCESS) {
         return { std::move(outDevice),
@@ -223,4 +227,3 @@ yst::gpuc::ApiVersion Device::GetActiveApiVersion() const
 }
 
 } // namespace yst::core
-

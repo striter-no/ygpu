@@ -9,6 +9,10 @@
     "binary": "static-lib"
   },
 
+  "dependencies": {
+    "wvulkan": { "version": ">=0.0.0" }
+  },
+
   "code": {
     "sources": ["**/*.cpp"],
     "output": "./bin/errors",

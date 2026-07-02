@@ -1,6 +1,9 @@
 #pragma once
+#include <volk.h>
+
 #include <VkBootstrap.h>
 #include <vk_mem_alloc.h>
+
 #include <vulkan/vulkan.h>
 
 #include <errors.hpp>
@@ -52,4 +55,3 @@ inline std::pair<Device, CustomError> CreateDevice()
 }
 
 } // namespace yst::core
-

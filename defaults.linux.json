@@ -1,0 +1,35 @@
+{
+  "compiler": {
+    "cc": "zig c++",
+    "binary": "executable",
+    "objects_path": ".objs"
+  },
+
+  "targets": {
+    "release": {
+      "flags": ["-D_GNU_SOURCE", "-DVK_NO_PROTOTYPES", "-std=c++20"],
+      "optimization": "O3"
+    },
+
+    "debug": {
+      "flags": [
+        "-fsanitize=address",
+        "-g",
+        "-D_GNU_SOURCE",
+        "-DVK_NO_PROTOTYPES",
+        "-std=c++20"
+      ],
+      "optimization": "O1"
+    },
+
+    "valgrind": {
+      "flags": ["-g", "-D_GNU_SOURCE", "-DVK_NO_PROTOTYPES", "-std=c++20"],
+      "optimization": "O1"
+    },
+
+    "debug-silent": {
+      "flags": ["-g", "-D_GNU_SOURCE", "-DVK_NO_PROTOTYPES", "-w"],
+      "optimization": "O1"
+    }
+  }
+}

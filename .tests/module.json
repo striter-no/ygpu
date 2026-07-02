@@ -11,7 +11,7 @@
   "code": {
     "sources": ["*.cpp"],
     "includes": ["include"],
-    "libraries": ["vulkan"]
+    "libraries": []
   },
 
   "dependencies": {
@@ -21,4 +21,3 @@
   "target": "valgrind",
   "defaults": "defaults.json"
 }
-
