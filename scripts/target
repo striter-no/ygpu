@@ -1,0 +1,26 @@
+#!/bin/bash
+
+if [ $1 = "linux" ]; then
+    echo "[target] switching target to OS:linux"
+    cp ./defaults.linux.json ./defaults.json
+    cp ./.modules/example_window/module.linux.json ./.modules/example_window/module.json
+    find ./.modules -not -path "*/lib/*" -type f -name "*.a" -delete
+    find ./.modules -type f -name "*.o" -delete
+
+elif [ $1 = "win" ]; then
+    echo "[target] switching target to OS:Windows"
+    cp ./defaults.win.json ./defaults.json
+    cp ./.modules/example_window/module.win.json ./.modules/example_window/module.json
+    find ./.modules -not -path "*/lib/*" -type f -name "*.a" -delete
+    find ./.modules -type f -name "*.o" -delete
+
+elif [ $1 = "macos" ]; then
+    echo "[target] switching target to OS:MacOS"
+    cp ./defaults.macos.json ./defaults.json
+    cp ./.modules/example_window/module.macos.json ./.modules/example_window/module.json
+    find ./.modules -not -path "*/lib/*" -type f -name "*.a" -delete
+    find ./.modules -type f -name "*.o" -delete
+
+else
+    echo "[target] target is unknown (possible targets: linux, win, macos)"
+fi

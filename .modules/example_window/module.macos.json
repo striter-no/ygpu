@@ -1,0 +1,27 @@
+{
+  "metadata": {
+    "name": "example_window",
+    "version": "0.0.0",
+    "priority": 1000
+  },
+
+  "compiler": {
+    "binary": "executable"
+  },
+
+  "dependencies": {
+    "_": { "version": ">=0.0.0" }
+  },
+
+  "code": {
+    "sources": ["**/*.cpp"],
+    "output": "./bin/main-macos",
+    "includes": ["include"],
+    "libraries": [
+      "glfw3 --sysroot ./.dev/MacOSX13.3.sdk -F./.dev/MacOSX13.3.sdk/System/Library/Frameworks -framework Cocoa -framework IOKit -framework CoreFoundation -framework QuartzCore -framework Metal"
+    ],
+    "lib-dirs": ["./lib/macos", "./lib/macos/dyn"]
+  },
+
+  "target": "valgrind"
+}

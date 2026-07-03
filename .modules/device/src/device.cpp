@@ -1,3 +1,8 @@
+#include <iostream>
+#ifdef __APPLE__
+#include <dlfcn.h>
+#endif
+
 #include <device/device.hpp>
 
 #include <cstring>
@@ -12,6 +17,11 @@ namespace {
     /// Returns the built instance or the vkb error message on failure.
     vkb::Result<vkb::Instance> BuildInstance(const DeviceConfig& config)
     {
+#ifdef __APPLE__
+        bool enableValidation = false;
+#else
+        bool enableValidation = config.EnableDebug;
+#endif
         vkb::InstanceBuilder builder;
         auto b = builder.set_app_name(config.AppName.c_str())
                      .set_engine_name(config.EngineName.c_str())
@@ -20,15 +30,20 @@ namespace {
                          config.MinVulkanVersion.Patch)
                      .set_app_version(config.AppVersion.Pack())
                      .set_engine_version(config.EngineVersion.Pack())
-                     .request_validation_layers(config.EnableDebug);
+                     .request_validation_layers(enableValidation);
 
-        if (config.EnableDebug) {
+        if (enableValidation) {
             b = b.use_default_debug_messenger();
         }
 
         for (const char* ext : config.InstanceExtensions) {
+            std::cerr << "[debug] enabling: " << ext << std::endl;
             b = b.enable_extension(ext);
         }
+
+        // #ifdef __APPLE__
+        //         b = b.enable_extension(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        // #endif
 
         return b.build();
     }
@@ -45,11 +60,27 @@ std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config)
                 "Only BACKEND_VULKAN is implemented in this build") };
     }
 
-    if (volkInitialize() != VK_SUCCESS) {
+#ifdef __APPLE__
+    void* moltenVkModule = dlopen("libMoltenVK.dylib", RTLD_NOW | RTLD_LOCAL);
+    if (!moltenVkModule) {
         return { std::move(outDevice),
-            CustomError(ErrorCode::InstanceCreationFailed, // Или заведите новый ErrorCode::VolkInitializeFailed
-                "Failed to initialize volk. Is Vulkan driver installed on the system?") };
+            CustomError(ErrorCode::InstanceCreationFailed, "Failed to load libMoltenVK.dylib") };
     }
+
+    auto fp_vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)dlsym(moltenVkModule, "vkGetInstanceProcAddr");
+    if (!fp_vkGetInstanceProcAddr) {
+        return { std::move(outDevice),
+            CustomError(ErrorCode::InstanceCreationFailed, "Failed to find vkGetInstanceProcAddr in MoltenVK") };
+    }
+
+    outDevice.vkGetInstanceProcAddr = fp_vkGetInstanceProcAddr;
+    volkInitializeCustom(fp_vkGetInstanceProcAddr);
+#else
+    // Windows / Linux
+    if (volkInitialize() != VK_SUCCESS) {
+        return { std::move(outDevice), CustomError(ErrorCode::InstanceCreationFailed, "Failed to initialize volk") };
+    }
+#endif
 
     // 2. Instance.
     auto inst_ret = BuildInstance(config);
@@ -83,6 +114,11 @@ std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config)
     } else {
         requiredExts = config.DeviceExtensions;
     }
+
+    // #ifdef __APPLE__
+    //     requiredExts.push_back("VK_KHR_portability_subset");
+    // #endif
+
     for (const char* ext : requiredExts) {
         phys_builder = phys_builder.add_required_extension(ext);
     }
@@ -108,6 +144,7 @@ std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config)
     }
     outDevice.vkbDevice = dev_ret.value();
     outDevice.LogicalDevice = outDevice.vkbDevice.device;
+
     volkLoadDevice(outDevice.LogicalDevice);
 
     // 5. Graphics queue.
@@ -131,7 +168,6 @@ std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config)
     allocatorInfo.device = outDevice.LogicalDevice;
     allocatorInfo.instance = outDevice.Instance;
     allocatorInfo.vulkanApiVersion = config.MinVulkanVersion.Pack();
-    // Передаем адреса диспетчеров в VMA, остальное VMA найдет сам:
     allocatorInfo.pVulkanFunctions = &vulkanFunctions;
 
     if (vmaCreateAllocator(&allocatorInfo, &outDevice.Allocator) != VK_SUCCESS) {
@@ -173,6 +209,7 @@ Device::Device(Device&& other) noexcept
     Allocator = other.Allocator;
     vkbInstance = other.vkbInstance;
     vkbDevice = other.vkbDevice;
+    vkGetInstanceProcAddr = other.vkGetInstanceProcAddr;
 
     other.Instance = VK_NULL_HANDLE;
     other.PhysicalDevice = VK_NULL_HANDLE;
@@ -197,6 +234,7 @@ Device& Device::operator=(Device&& other) noexcept
     Allocator = other.Allocator;
     vkbInstance = other.vkbInstance;
     vkbDevice = other.vkbDevice;
+    vkGetInstanceProcAddr = other.vkGetInstanceProcAddr;
 
     other.Instance = VK_NULL_HANDLE;
     other.PhysicalDevice = VK_NULL_HANDLE;

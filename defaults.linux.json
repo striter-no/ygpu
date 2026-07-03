@@ -1,6 +1,7 @@
 {
   "compiler": {
-    "cc": "zig c++",
+    "cc": "clang++",
+    "linker": "ar",
     "binary": "executable",
     "objects_path": ".objs"
   },

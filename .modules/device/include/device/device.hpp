@@ -16,6 +16,8 @@ namespace yst::core {
 
 class Device {
 public:
+    PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr;
+
     VkInstance Instance = VK_NULL_HANDLE;
     VkPhysicalDevice PhysicalDevice = VK_NULL_HANDLE;
     VkDevice LogicalDevice = VK_NULL_HANDLE;

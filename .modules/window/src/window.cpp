@@ -1,6 +1,7 @@
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include <volk.h>
 
+#include <GLFW/glfw3.h>
+#include <iostream>
 #include <window/window.hpp>
 
 namespace yst::ywin {
@@ -34,8 +35,13 @@ namespace {
 
 } // namespace
 
-std::pair<Window, CustomError> CreateWindow(const WindowConfig& config)
+std::pair<Window, CustomError> CreateWindow(const WindowConfig& config, const yst::core::Device& device)
 {
+#ifdef __APPLE__
+    glfwInitVulkanLoader(device.vkGetInstanceProcAddr);
+    std::cerr << "[debug] called glfwInitVulkanLoader with custom vkGetInstanceProcAddr\n";
+#endif
+
     if (!glfwInit())
         return { Window {},
             CustomError(ErrorCode::WindowGLFWInitFailed,
@@ -167,4 +173,3 @@ Window::Extent2D Window::GetFramebufferSize() const
 }
 
 } // namespace yst::ywin
-

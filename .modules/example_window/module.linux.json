@@ -15,7 +15,7 @@
 
   "code": {
     "sources": ["**/*.cpp"],
-    "output": "./bin/main",
+    "output": "./bin/main-linux",
     "includes": ["include"],
     "libraries": ["glfw"]
   },

@@ -15,10 +15,10 @@
 
   "code": {
     "sources": ["**/*.cpp"],
-    "output": "./bin/main",
+    "output": "./bin/main-win.exe",
     "includes": ["include"],
     "libraries": ["glfw3", "gdi32", "user32", "shell32"],
-    "lib-dirs": ["./lib"]
+    "lib-dirs": ["./lib/win"]
   },
 
   "target": "valgrind"

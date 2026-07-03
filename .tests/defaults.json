@@ -6,20 +6,9 @@
   },
 
   "targets": {
-    "release": {
-      "flags": ["-D_GNU_SOURCE"],
-      "optimization": "O3"
-    },
-
-    "debug": {
-      "flags": ["-fsanitize=address", "-g", "-D_GNU_SOURCE"],
-      "optimization": "O1"
-    },
-
     "valgrind": {
-      "flags": ["-g", "-D_GNU_SOURCE"],
+      "flags": ["-g", "-D_GNU_SOURCE", "-DVK_NO_PROTOTYPES"],
       "optimization": "O1"
     }
   }
 }
-

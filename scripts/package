@@ -1,0 +1,37 @@
+#!/bin/bash
+
+mkdir -p ./.packages
+cd .dev
+
+echo "[package] packaging linux release..."
+
+rm -rf ./linux-package
+mkdir ./linux-package
+
+cp -r ../assets ./linux-package
+cp ../.modules/example_window/bin/main-linux ./linux-package/main
+tar -cf ../.packages/linux-package.tar ./linux-package
+
+echo "[package] packaging windows release..."
+
+rm -rf ./win-package
+mkdir ./win-package
+
+cp -r ../assets ./win-package
+cp ../.modules/example_window/bin/main-win.exe ./win-package/main.exe
+cp ../.modules/example_window/lib/win/* ./win-package/
+tar -cf ../.packages/win-package.tar ./win-package
+
+echo "[package] packaging macos release..."
+
+rm -rf ./macos-package
+mkdir ./macos-package
+
+cp -r ../assets ./macos-package
+cp ../.modules/example_window/bin/main-macos ./macos-package/main
+cp ../.modules/example_window/lib/macos/* ./macos-package/
+cp ../.modules/example_window/lib/macos/dyn/* ./macos-package/
+tar -cf ../.packages/macos-package.tar ./macos-package
+
+echo "[package] sha-256 sums:"
+sha256sum ../.packages/*

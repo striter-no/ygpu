@@ -9,6 +9,8 @@
 // Run: ./test_bind_group_layout
 #include <iostream>
 
+#include <volk.h>
+
 #include <descriptor/bind_group_layout.hpp>
 #include <device/device.hpp>
 #include <errors.hpp>
@@ -155,4 +157,3 @@ int main()
     std::cout << "test_bind_group_layout: all tests passed\n";
     return 0;
 }
-

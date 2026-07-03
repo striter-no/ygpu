@@ -10,7 +10,7 @@
   },
 
   "only-deps": true,
-  "defaults": "defaults.linux.json",
+  "defaults": "defaults.json",
   "target": "valgrind",
   "testsPath": ".tests"
 }

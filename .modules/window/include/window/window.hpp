@@ -4,6 +4,7 @@
 #include <errors.hpp>
 
 #include "config.hpp"
+#include <device/device.hpp>
 
 struct GLFWwindow;
 
@@ -25,8 +26,7 @@ private:
     /// special members so the resize callback never sees a stale address.
     void RebindUserPointer() noexcept;
 
-    friend std::pair<Window, CustomError> CreateWindow(
-        const WindowConfig& config);
+    friend std::pair<Window, CustomError> CreateWindow(const WindowConfig& config, const yst::core::Device& device);
 
 public:
     Window() = default;
@@ -61,15 +61,14 @@ public:
     VkSurfaceKHR GetSurface(VkInstance instance) const;
 };
 
-std::pair<Window, CustomError> CreateWindow(const WindowConfig& config);
+std::pair<Window, CustomError> CreateWindow(const WindowConfig& config, const yst::core::Device& device);
 
 /// Convenience overload (Layer 0 of progressive disclosure): construct a
 /// window with the DEFAULT_WINDOW preset. Equivalent to
 /// `CreateWindow(CreateConfig(ywinc::DEFAULT_WINDOW))`.
-inline std::pair<Window, CustomError> CreateWindow()
+inline std::pair<Window, CustomError> CreateWindow(const yst::core::Device& device)
 {
-    return CreateWindow(CreateConfig(ywinc::DEFAULT_WINDOW));
+    return CreateWindow(CreateConfig(ywinc::DEFAULT_WINDOW), device);
 }
 
 } // namespace yst::ywin
-

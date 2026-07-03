@@ -1,0 +1,29 @@
+#!/bin/bash
+
+set -e
+
+echo "[loop] starting a full release"
+echo "[loop] building linux"
+
+./scripts/target linux
+axle build .
+
+echo "[loop] starting tests on native OS"
+axle test
+
+echo "[loop] building windows"
+
+./scripts/target win
+axle build .
+
+echo "[loop] building macos"
+
+./scripts/target macos
+axle build .
+
+echo "[loop] building DONE"
+echo "[loop] packaging"
+
+./scripts/package
+
+echo "[loop] DONE"

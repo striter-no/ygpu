@@ -50,16 +50,6 @@ static Mat4 MakeRotationZ(float radians)
 int main()
 {
     // --- Window + device + swapchain ------------------------------------
-    auto winCfg = yst::ywin::CreateConfig(yst::ywinc::DEFAULT_WINDOW);
-    winCfg.Width = 1024;
-    winCfg.Height = 768;
-    winCfg.Title = "YST Textured Quad";
-    auto [window, werr] = yst::ywin::CreateWindow(winCfg);
-    if (werr) {
-        std::cerr << "Window: " << werr.str() << "\n";
-        return -1;
-    }
-
     auto deviceCfg = yst::core::CreateConfig(yst::gpuc::DEBUG_CONFIG);
     auto [device, derr] = yst::core::CreateDevice(deviceCfg);
     if (derr) {
@@ -67,6 +57,16 @@ int main()
         return -1;
     }
     std::cout << "Using GPU: " << device.GetDeviceName() << "\n";
+
+    auto winCfg = yst::ywin::CreateConfig(yst::ywinc::DEFAULT_WINDOW);
+    winCfg.Width = 1024;
+    winCfg.Height = 768;
+    winCfg.Title = "YST Textured Quad";
+    auto [window, werr] = yst::ywin::CreateWindow(winCfg, device);
+    if (werr) {
+        std::cerr << "Window: " << werr.str() << "\n";
+        return -1;
+    }
 
     auto [swapchain, serr] = yst::core::CreateSwapchain(device, window);
     if (serr) {
