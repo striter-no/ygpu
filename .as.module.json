@@ -1,11 +1,11 @@
 {
-  "insert": {
+  "export": {
     "modules": {
       "_": {
         "version": ">=0.0.0",
         "name": "ygpu"
       }
     },
-    "tests": null
+    "tests": false
   }
 }
