@@ -294,23 +294,27 @@ uint32_t GetAvailableDeviceCount()
         return 0;
 #endif
 
-    vkb::InstanceBuilder builder;
-    auto inst_ret = builder.set_app_name("QueryCount")
-                        .request_validation_layers(false)
-                        .build();
-    if (!inst_ret)
+    VkApplicationInfo appInfo {};
+    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    appInfo.pApplicationName = "QueryCount";
+    appInfo.apiVersion = VK_API_VERSION_1_1;
+
+    VkInstanceCreateInfo createInfo {};
+    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    createInfo.pApplicationInfo = &appInfo;
+
+    VkInstance tempInstance = VK_NULL_HANDLE;
+    if (vkCreateInstance(&createInfo, nullptr, &tempInstance) != VK_SUCCESS) {
         return 0;
-
-    uint32_t count = 0;
-
-    auto pfnEnumerate = (PFN_vkEnumeratePhysicalDevices)vkGetInstanceProcAddr(
-        inst_ret.value().instance, "vkEnumeratePhysicalDevices");
-
-    if (pfnEnumerate) {
-        pfnEnumerate(inst_ret.value().instance, &count, nullptr);
     }
 
-    vkb::destroy_instance(inst_ret.value());
+    uint32_t count = 0;
+    auto pfnEnumerate = (PFN_vkEnumeratePhysicalDevices)vkGetInstanceProcAddr(tempInstance, "vkEnumeratePhysicalDevices");
+    if (pfnEnumerate) {
+        pfnEnumerate(tempInstance, &count, nullptr);
+    }
+
+    vkDestroyInstance(tempInstance, nullptr);
     return count;
 }
 

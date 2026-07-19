@@ -1,3 +1,4 @@
+#include "device/config.hpp"
 #include <buffer/buffer.hpp>
 #include <descriptor/bind_group.hpp>
 #include <descriptor/bind_group_layout.hpp>
