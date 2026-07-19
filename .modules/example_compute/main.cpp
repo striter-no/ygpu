@@ -84,7 +84,14 @@ int main()
     auto [bg, bgErr] = yst::core::CreateBindGroup(device, pool, bindGroupCfg);
 
     // --- Compute Pipeline ---
-    auto [computeSpv, spvErr] = yst::core::LoadSpvFile("./assets/shaders/compiled/compute.spv");
+    auto [computeSpv, spvErr] = yst::core::LoadAndCompileGlslFile(
+        "./assets/shaders/compute.comp",
+        VK_SHADER_STAGE_COMPUTE_BIT);
+    if (spvErr) {
+        std::cerr << "SPV error: " << spvErr.str() << "\n";
+        return -1;
+    }
+
     auto computePipelineCfg = yst::core::ComputePipelineBuilder()
                                   .WithPipelineLayout(pipelineLayout.layout)
                                   .WithShaderSpv(computeSpv)
