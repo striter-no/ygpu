@@ -98,14 +98,9 @@ std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config)
     // 3. Physical device selection.
     vkb::PhysicalDeviceSelector selector { outDevice.vkbInstance };
 
-    auto gpuPreference = config.PreferIntegratedGPU
-        ? vkb::PreferredDeviceType::integrated
-        : vkb::PreferredDeviceType::discrete;
-
     auto phys_builder = selector.set_minimum_version(
                                     config.MinVulkanVersion.Major,
                                     config.MinVulkanVersion.Minor)
-                            .prefer_gpu_device_type(gpuPreference)
                             .require_present(config.RequirePresent);
 
     std::vector<const char*> requiredExts;
@@ -115,22 +110,42 @@ std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config)
         requiredExts = config.DeviceExtensions;
     }
 
-    // #ifdef __APPLE__
-    //     requiredExts.push_back("VK_KHR_portability_subset");
-    // #endif
-
     for (const char* ext : requiredExts) {
         phys_builder = phys_builder.add_required_extension(ext);
     }
 
-    auto phys_ret = phys_builder.select();
-    if (!phys_ret) {
-        return { std::move(outDevice),
-            CustomError(ErrorCode::PhysicalDeviceSelectionFailed,
-                "Failed to select physical device: "
-                    + phys_ret.error().message()) };
+    vkb::PhysicalDevice physicalDevice;
+
+    if (config.TargetDeviceIndex.has_value()) {
+        auto devices_ret = phys_builder.select_devices();
+        if (!devices_ret) {
+            return { std::move(outDevice),
+                CustomError(ErrorCode::PhysicalDeviceSelectionFailed,
+                    "Failed to enumerate physical devices") };
+        }
+        auto devices = devices_ret.value();
+        if (config.TargetDeviceIndex.value() >= devices.size()) {
+            return { std::move(outDevice),
+                CustomError(ErrorCode::PhysicalDeviceSelectionFailed,
+                    "TargetDeviceIndex is out of range") };
+        }
+
+        physicalDevice = devices[config.TargetDeviceIndex.value()];
+    } else {
+        auto gpuPreference = config.PreferIntegratedGPU
+            ? vkb::PreferredDeviceType::integrated
+            : vkb::PreferredDeviceType::discrete;
+
+        phys_builder = phys_builder.prefer_gpu_device_type(gpuPreference);
+        auto phys_ret = phys_builder.select();
+        if (!phys_ret) {
+            return { std::move(outDevice),
+                CustomError(ErrorCode::PhysicalDeviceSelectionFailed,
+                    "Failed to select physical device: " + phys_ret.error().message()) };
+        }
+        physicalDevice = phys_ret.value();
     }
-    vkb::PhysicalDevice physicalDevice = phys_ret.value();
+
     outDevice.PhysicalDevice = physicalDevice.physical_device;
 
     // 4. Logical device.
@@ -262,6 +277,35 @@ yst::gpuc::ApiVersion Device::GetActiveApiVersion() const
     VkPhysicalDeviceProperties props {};
     vkGetPhysicalDeviceProperties(PhysicalDevice, &props);
     return yst::gpuc::ApiVersion::Unpack(props.apiVersion);
+}
+
+uint32_t GetAvailableDeviceCount()
+{
+#ifdef __APPLE__
+    void* moltenVkModule = dlopen("libMoltenVK.dylib", RTLD_NOW | RTLD_LOCAL);
+    if (!moltenVkModule)
+        return 0;
+    auto fp_vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)dlsym(moltenVkModule, "vkGetInstanceProcAddr");
+    if (!fp_vkGetInstanceProcAddr)
+        return 0;
+    volkInitializeCustom(fp_vkGetInstanceProcAddr);
+#else
+    if (volkInitialize() != VK_SUCCESS)
+        return 0;
+#endif
+
+    vkb::InstanceBuilder builder;
+    auto inst_ret = builder.set_app_name("QueryCount")
+                        .request_validation_layers(false)
+                        .build();
+    if (!inst_ret)
+        return 0;
+
+    uint32_t count = 0;
+    vkEnumeratePhysicalDevices(inst_ret.value().instance, &count, nullptr);
+
+    vkb::destroy_instance(inst_ret.value());
+    return count;
 }
 
 } // namespace yst::core

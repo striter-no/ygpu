@@ -56,4 +56,8 @@ inline std::pair<Device, CustomError> CreateDevice()
     return CreateDevice(CreateConfig(yst::gpuc::DEFAULT_CONFIG));
 }
 
+/// Returns number of physical GPUs in the system.
+/// Creates and destroys temporal Vulkan instance.
+uint32_t GetAvailableDeviceCount();
+
 } // namespace yst::core

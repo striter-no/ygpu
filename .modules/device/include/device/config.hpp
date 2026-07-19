@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <vulkan/vulkan_core.h>
 
 #include <cstdint>
@@ -88,10 +89,11 @@ struct DeviceConfig {
     /// Enable validation layers + debug messenger. Off in DEFAULT_CONFIG,
     /// on in DEBUG_CONFIG.
     bool EnableDebug = false;
+
+    std::optional<uint32_t> TargetDeviceIndex;
 };
 
 /// Resolve a named preset into a fully-populated DeviceConfig.
 DeviceConfig CreateConfig(yst::gpuc::Preset preset);
 
 } // namespace yst::core
-
