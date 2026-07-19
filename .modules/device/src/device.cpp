@@ -302,10 +302,16 @@ uint32_t GetAvailableDeviceCount()
         return 0;
 
     uint32_t count = 0;
-    vkEnumeratePhysicalDevices(inst_ret.value().instance, &count, nullptr);
+
+    auto pfnEnumerate = (PFN_vkEnumeratePhysicalDevices)vkGetInstanceProcAddr(
+        inst_ret.value().instance, "vkEnumeratePhysicalDevices");
+
+    if (pfnEnumerate) {
+        pfnEnumerate(inst_ret.value().instance, &count, nullptr);
+    }
 
     vkb::destroy_instance(inst_ret.value());
     return count;
 }
 
-} // namespace yst::core
+}
