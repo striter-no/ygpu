@@ -309,12 +309,17 @@ uint32_t GetAvailableDeviceCount()
     }
 
     uint32_t count = 0;
+
     auto pfnEnumerate = (PFN_vkEnumeratePhysicalDevices)vkGetInstanceProcAddr(tempInstance, "vkEnumeratePhysicalDevices");
     if (pfnEnumerate) {
         pfnEnumerate(tempInstance, &count, nullptr);
     }
 
-    vkDestroyInstance(tempInstance, nullptr);
+    auto pfnDestroy = (PFN_vkDestroyInstance)vkGetInstanceProcAddr(tempInstance, "vkDestroyInstance");
+    if (pfnDestroy) {
+        pfnDestroy(tempInstance, nullptr);
+    }
+
     return count;
 }
 
