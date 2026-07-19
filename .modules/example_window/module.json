@@ -15,12 +15,9 @@
 
   "code": {
     "sources": ["**/*.cpp"],
-    "output": "./bin/main-macos",
+    "output": "./bin/main-linux",
     "includes": ["include"],
-    "libraries": [
-      "glfw3 --sysroot ./.dev/MacOSX13.3.sdk -F./.dev/MacOSX13.3.sdk/System/Library/Frameworks -framework Cocoa -framework IOKit -framework CoreFoundation -framework QuartzCore -framework Metal"
-    ],
-    "lib-dirs": ["./lib/macos", "./lib/macos/dyn"]
+    "libraries": ["glfw"]
   },
 
   "target": "valgrind"

@@ -262,6 +262,39 @@ void CommandList::BlitImageMip(VkImage srcImage, VkImage dstImage,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, filter);
 }
 
+void CommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+{
+    vkCmdDispatch(buffer, groupCountX, groupCountY, groupCountZ);
+}
+
+void CommandList::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+{
+    VkBufferCopy region {};
+    region.srcOffset = 0;
+    region.dstOffset = 0;
+    region.size = size;
+    vkCmdCopyBuffer(buffer, srcBuffer, dstBuffer, 1, &region);
+}
+
+void CommandList::PipelineBarrierBuffer(VkBuffer buffer,
+    VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+    VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+    VkDeviceSize offset, VkDeviceSize size)
+{
+    VkBufferMemoryBarrier barrier {};
+    barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.buffer = buffer;
+    barrier.offset = offset;
+    barrier.size = size;
+    barrier.srcAccessMask = srcAccessMask;
+    barrier.dstAccessMask = dstAccessMask;
+
+    vkCmdPipelineBarrier(this->buffer, srcStageMask, dstStageMask, 0,
+        0, nullptr, 1, &barrier, 0, nullptr);
+}
+
 std::pair<VkCommandPool, CustomError> CreateCommandPool(
     Device& device, const CommandPoolConfig& config)
 {
@@ -354,4 +387,3 @@ CustomError SubmitOneTimeCommands(Device& device,
 }
 
 } // namespace yst::core
-

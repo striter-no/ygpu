@@ -133,6 +133,15 @@ public:
         uint32_t dstWidth, uint32_t dstHeight, uint32_t dstMip,
         VkFilter filter = VK_FILTER_LINEAR,
         VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
+
+    void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
+
+    void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+
+    void PipelineBarrierBuffer(VkBuffer buffer,
+        VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+        VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+        VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE);
 };
 
 std::pair<VkCommandPool, CustomError> CreateCommandPool(
@@ -163,4 +172,3 @@ CustomError SubmitOneTimeCommands(Device& device,
     const std::function<CustomError(CommandList&)>& recorder);
 
 } // namespace yst::core
-

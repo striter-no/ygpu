@@ -65,6 +65,7 @@ enum class ErrorCode : int {
     ShaderModuleCreationFailed = 600,
     PipelineLayoutCreationFailed = 601,
     GraphicsPipelineCreationFailed = 602,
+    ComputePipelineCreationFailed = 603,
 
     // ---- Shader (yst::core) -------------------------------------------
     ShaderFileOpenFailed = 700,
@@ -95,4 +96,3 @@ enum class ErrorCode : int {
 const char* ErrorName(int code);
 
 } // namespace yst
-

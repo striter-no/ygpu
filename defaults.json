@@ -1,19 +1,14 @@
 {
   "compiler": {
-    "cc": "zig c++ -target aarch64-macos",
-    "linker": "zig ar",
+    "cc": "clang++",
+    "linker": "ar",
     "binary": "executable",
     "objects_path": ".objs"
   },
 
   "targets": {
     "release": {
-      "flags": [
-        "-D_GNU_SOURCE",
-        "-DVK_NO_PROTOTYPES",
-        "-DGLFW_INCLUDE_NONE",
-        "-std=c++20"
-      ],
+      "flags": ["-D_GNU_SOURCE", "-DVK_NO_PROTOTYPES", "-std=c++20"],
       "optimization": "O3"
     },
 
@@ -22,7 +17,6 @@
         "-fsanitize=address",
         "-g",
         "-D_GNU_SOURCE",
-        "-DGLFW_INCLUDE_NONE",
         "-DVK_NO_PROTOTYPES",
         "-std=c++20"
       ],
@@ -30,24 +24,12 @@
     },
 
     "valgrind": {
-      "flags": [
-        "-g",
-        "-D_GNU_SOURCE",
-        "-DVK_NO_PROTOTYPES",
-        "-std=c++20",
-        "-DGLFW_INCLUDE_NONE"
-      ],
+      "flags": ["-g", "-D_GNU_SOURCE", "-DVK_NO_PROTOTYPES", "-std=c++20"],
       "optimization": "O1"
     },
 
     "debug-silent": {
-      "flags": [
-        "-g",
-        "-D_GNU_SOURCE",
-        "-DVK_NO_PROTOTYPES",
-        "-DGLFW_INCLUDE_VULKAN",
-        "-w"
-      ],
+      "flags": ["-g", "-D_GNU_SOURCE", "-DVK_NO_PROTOTYPES", "-w"],
       "optimization": "O1"
     }
   }

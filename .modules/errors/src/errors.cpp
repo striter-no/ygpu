@@ -80,6 +80,8 @@ const char* ErrorName(int code)
         return "PipelineLayoutCreationFailed";
     case ErrorCode::GraphicsPipelineCreationFailed:
         return "GraphicsPipelineCreationFailed";
+    case ErrorCode::ComputePipelineCreationFailed:
+        return "ComputePipelineCreationFailed";
 
     // Shader
     case ErrorCode::ShaderFileOpenFailed:
@@ -146,4 +148,3 @@ const char* yst::CustomError::name() const
 {
     return ErrorName(code);
 }
-
