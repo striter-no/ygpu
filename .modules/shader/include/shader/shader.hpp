@@ -45,4 +45,7 @@ std::pair<std::vector<uint32_t>, CustomError> LoadSpvFile(
 std::pair<std::vector<uint32_t>, CustomError> LoadAndCompileGlslFile(
     const std::string& path, VkShaderStageFlagBits stage);
 
+std::pair<std::vector<uint32_t>, CustomError> CompileGlslToShader(
+    const std::string& source, VkShaderStageFlagBits stage);
+
 } // namespace yst::core
