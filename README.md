@@ -330,6 +330,19 @@ The repository exports its aggregate module under the name `ygpu`. A consuming m
 }
 ```
 
+And as remote dependency:
+
+```json
+{
+  "remote_deps": {
+    "ygpu": {
+      "version": "=0.0.0",
+      "url": "https://github.com/striter-no/ygpu"
+    }
+  }
+}
+```
+
 The exported module brings in the core modules and does not export the project tests.
 
 Because Axle is developed alongside this project, use the dependency syntax supported by the Axle version you have installed when adding the remote repository.
