@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SDK_VERSION="13.3"
+SDK_NAME="MacOSX${SDK_VERSION}.sdk"
+DEV_DIR="./.dev"
+SDK_DIR="${DEV_DIR}/${SDK_NAME}"
+ARCHIVE="${DEV_DIR}/${SDK_NAME}.tar.xz"
+SDK_URL="https://github.com/joseluisq/macosx-sdks/releases/download/${SDK_VERSION}/${SDK_NAME}.tar.xz"
+
+if [ -d "${SDK_DIR}" ]; then
+    echo "[macos-sdk] already installed: ${SDK_DIR}"
+    exit 0
+fi
+
+if ! command -v wget >/dev/null 2>&1; then
+    echo "[macos-sdk] wget is required but was not found"
+    exit 1
+fi
+
+if ! command -v tar >/dev/null 2>&1; then
+    echo "[macos-sdk] tar is required but was not found"
+    exit 1
+fi
+
+mkdir -p "${DEV_DIR}"
+
+echo "[macos-sdk] downloading macOS SDK ${SDK_VERSION}"
+wget -O "${ARCHIVE}" "${SDK_URL}"
+
+echo "[macos-sdk] extracting ${ARCHIVE}"
+tar -xJf "${ARCHIVE}" -C "${DEV_DIR}"
+
+rm -f "${ARCHIVE}"
+
+if [ ! -d "${SDK_DIR}" ]; then
+    echo "[macos-sdk] extraction completed, but ${SDK_DIR} was not created"
+    exit 1
+fi
+
+echo "[macos-sdk] installed: ${SDK_DIR}"

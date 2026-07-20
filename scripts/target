@@ -1,26 +1,61 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-if [ $1 = "linux" ]; then
-    echo "[target] switching target to OS:linux"
-    cp ./defaults.linux.json ./defaults.json
-    cp ./.modules/example_window/module.linux.json ./.modules/example_window/module.json
+set -euo pipefail
+
+MACOS_SDK_VERSION="13.3"
+MACOS_SDK_DIR="./.dev/MacOSX${MACOS_SDK_VERSION}.sdk"
+
+clean_build_outputs()
+{
     find ./.modules -not -path "*/lib/*" -type f -name "*.a" -delete
     find ./.modules -type f -name "*.o" -delete
+}
 
-elif [ $1 = "win" ]; then
-    echo "[target] switching target to OS:Windows"
-    cp ./defaults.win.json ./defaults.json
-    cp ./.modules/example_window/module.win.json ./.modules/example_window/module.json
-    find ./.modules -not -path "*/lib/*" -type f -name "*.a" -delete
-    find ./.modules -type f -name "*.o" -delete
+require_macos_sdk()
+{
+    if [ -d "${MACOS_SDK_DIR}" ]; then
+        echo "[target] found macOS SDK: ${MACOS_SDK_DIR}"
+        return
+    fi
 
-elif [ $1 = "macos" ]; then
-    echo "[target] switching target to OS:MacOS"
-    cp ./defaults.macos.json ./defaults.json
-    cp ./.modules/example_window/module.macos.json ./.modules/example_window/module.json
-    find ./.modules -not -path "*/lib/*" -type f -name "*.a" -delete
-    find ./.modules -type f -name "*.o" -delete
+    echo "[target] macOS SDK ${MACOS_SDK_VERSION} was not found"
+    echo "[target] expected directory: ${MACOS_SDK_DIR}"
+    echo "[target] install it with:"
+    echo "[target]   ./scripts/setup-macos-sdk"
+    exit 1
+}
 
-else
-    echo "[target] target is unknown (possible targets: linux, win, macos)"
-fi
+target="${1:-}"
+
+case "${target}" in
+    linux)
+        echo "[target] switching target to OS:Linux"
+        cp ./defaults.linux.json ./defaults.json
+        cp ./.modules/example_window/module.linux.json \
+            ./.modules/example_window/module.json
+        clean_build_outputs
+        ;;
+
+    win)
+        echo "[target] switching target to OS:Windows"
+        cp ./defaults.win.json ./defaults.json
+        cp ./.modules/example_window/module.win.json \
+            ./.modules/example_window/module.json
+        clean_build_outputs
+        ;;
+
+    macos)
+        echo "[target] switching target to OS:macOS"
+        require_macos_sdk
+        cp ./defaults.macos.json ./defaults.json
+        cp ./.modules/example_window/module.macos.json \
+            ./.modules/example_window/module.json
+        clean_build_outputs
+        ;;
+
+    *)
+        echo "[target] target is unknown"
+        echo "[target] possible targets: linux, win, macos"
+        exit 1
+        ;;
+esac
