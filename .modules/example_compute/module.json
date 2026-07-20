@@ -17,7 +17,7 @@
     "sources": ["**/*.cpp"],
     "output": "./bin/main",
     "includes": ["include"],
-    "libraries": []
+    "libraries": ["shaderc_combined", "glslang" ,"SPIRV" ,"SPIRV-Tools" ,"SPIRV-Tools-opt", "MachineIndependent" ,"GenericCodeGen" ,"OSDependent"]
   },
 
   "target": "valgrind"

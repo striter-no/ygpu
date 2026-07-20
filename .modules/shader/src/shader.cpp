@@ -3,6 +3,8 @@
 #include <fstream>
 #include <iostream>
 #include <shader/shader.hpp>
+#include <shaderc/shaderc.h>
+#include <shaderc/shaderc.hpp>
 #include <sstream>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -153,61 +155,68 @@ std::pair<std::vector<uint32_t>, CustomError> LoadAndCompileGlslFile(
         return { {}, CustomError(ErrorCode::ShaderFileOpenFailed, "Shader file does not exist: " + path) };
     }
 
-    std::string stageStr;
+    shaderc_shader_kind kind;
     switch (stage) {
     case VK_SHADER_STAGE_VERTEX_BIT:
-        stageStr = "vertex";
+        kind = shaderc_vertex_shader;
         break;
     case VK_SHADER_STAGE_FRAGMENT_BIT:
-        stageStr = "fragment";
+        kind = shaderc_fragment_shader;
         break;
     case VK_SHADER_STAGE_COMPUTE_BIT:
-        stageStr = "compute";
+        kind = shaderc_compute_shader;
         break;
     default:
         return { {}, CustomError(ErrorCode::ShaderModuleCreationFailed, "Unsupported shader stage") };
     }
 
-    char tempFileTemplate[] = "/tmp/yst_shader_XXXXXX.spv";
-    int fd = mkstemps(tempFileTemplate, 4);
-    if (fd == -1) {
-        return { {}, CustomError(ErrorCode::ShaderModuleCreationFailed, "Failed to create temp file") };
-    }
-    close(fd);
-    std::string tempFile = tempFileTemplate;
-    std::string stageArg = "-fshader-stage=" + stageStr;
+    std::ifstream t(path);
+    std::stringstream buffer;
+    buffer << t.rdbuf();
+    t.close();
 
-    pid_t pid = fork();
-    if (pid == 0) {
-        char* args[] = {
-            const_cast<char*>("glslc"),
-            const_cast<char*>(stageArg.c_str()),
-            const_cast<char*>("-o"),
-            const_cast<char*>(tempFile.c_str()),
-            const_cast<char*>(path.c_str()),
-            nullptr
-        };
+    std::string source = buffer.str();
 
-        execvp("glslc", args);
+    shaderc::Compiler compiler;
+    shaderc::CompileOptions options;
+    options.SetOptimizationLevel(shaderc_optimization_level_performance);
+    shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, kind, "shader_src", options);
 
-        std::cerr << "[Shader] Failed to execute glslc. Is it in PATH?" << std::endl;
-        exit(EXIT_FAILURE);
-    } else if (pid > 0) {
-        int status;
-        waitpid(pid, &status, 0);
-
-        if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
-            std::remove(tempFile.c_str());
-            return { {}, CustomError(ErrorCode::ShaderModuleCreationFailed, "glslc failed to compile shader (check console output for errors): " + path) };
-        }
-    } else {
-        std::remove(tempFile.c_str());
-        return { {}, CustomError(ErrorCode::ShaderModuleCreationFailed, "Failed to fork process") };
+    if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
+        return { {}, CustomError(ErrorCode::ShaderModuleCreationFailed, "Failed to compile shader: " + module.GetErrorMessage()) };
     }
 
-    auto [spv, err] = LoadSpvFile(tempFile);
-    std::remove(tempFile.c_str());
-    return { std::move(spv), err };
+    return { { module.cbegin(), module.cend() }, CustomError() };
+}
+
+std::pair<std::vector<uint32_t>, CustomError> CompileGlslToShader(
+    const std::string& source, VkShaderStageFlagBits stage)
+{
+    shaderc_shader_kind kind;
+    switch (stage) {
+    case VK_SHADER_STAGE_VERTEX_BIT:
+        kind = shaderc_vertex_shader;
+        break;
+    case VK_SHADER_STAGE_FRAGMENT_BIT:
+        kind = shaderc_fragment_shader;
+        break;
+    case VK_SHADER_STAGE_COMPUTE_BIT:
+        kind = shaderc_compute_shader;
+        break;
+    default:
+        return { {}, CustomError(ErrorCode::ShaderModuleCreationFailed, "Unsupported shader stage") };
+    }
+
+    shaderc::Compiler compiler;
+    shaderc::CompileOptions options;
+    options.SetOptimizationLevel(shaderc_optimization_level_performance);
+    shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(source, kind, "shader_src", options);
+
+    if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
+        return { {}, CustomError(ErrorCode::ShaderModuleCreationFailed, "Failed to compile shader: " + module.GetErrorMessage()) };
+    }
+
+    return { { module.cbegin(), module.cend() }, CustomError() };
 }
 
 } // namespace yst::core

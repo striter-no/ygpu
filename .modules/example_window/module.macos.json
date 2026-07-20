@@ -18,7 +18,7 @@
     "output": "./bin/main-macos",
     "includes": ["include"],
     "libraries": [
-      "glfw3 --sysroot ./.dev/MacOSX13.3.sdk -F./.dev/MacOSX13.3.sdk/System/Library/Frameworks -framework Cocoa -framework IOKit -framework CoreFoundation -framework QuartzCore -framework Metal"
+      "glfw3 --sysroot ./.dev/MacOSX13.3.sdk -F./.dev/MacOSX13.3.sdk/System/Library/Frameworks -framework Cocoa -framework IOKit -framework CoreFoundation -framework QuartzCore -framework Metal", "shaderc_combined", "glslang" ,"SPIRV" ,"SPIRV-Tools" ,"SPIRV-Tools-opt", "MachineIndependent" ,"GenericCodeGen" ,"OSDependent"
     ],
     "lib-dirs": ["./lib/macos", "./lib/macos/dyn"]
   },
