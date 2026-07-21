@@ -6,6 +6,7 @@
 #include <device/device.hpp>
 
 #include <cstring>
+#include <utility>
 
 #include "device/config.hpp"
 
@@ -226,71 +227,115 @@ void Device::Destroy()
         LogicalDevice = VK_NULL_HANDLE;
     }
 
+    GraphicsQueue = VK_NULL_HANDLE;
+    GraphicsQueueFamily = 0;
+
+    ComputeQueue = VK_NULL_HANDLE;
+    ComputeQueueFamily = 0;
+
+    PhysicalDevice = VK_NULL_HANDLE;
+
     if (Instance != VK_NULL_HANDLE) {
         vkb::destroy_instance(vkbInstance);
         Instance = VK_NULL_HANDLE;
     }
+
+    vkGetInstanceProcAddr = nullptr;
 }
 
 Device::~Device() { Destroy(); }
 
 Device::Device(Device&& other) noexcept
+    : vkGetInstanceProcAddr(
+          std::exchange(
+              other.vkGetInstanceProcAddr,
+              nullptr))
+    , Instance(
+          std::exchange(
+              other.Instance,
+              VK_NULL_HANDLE))
+    , PhysicalDevice(
+          std::exchange(
+              other.PhysicalDevice,
+              VK_NULL_HANDLE))
+    , LogicalDevice(
+          std::exchange(
+              other.LogicalDevice,
+              VK_NULL_HANDLE))
+    , GraphicsQueue(
+          std::exchange(
+              other.GraphicsQueue,
+              VK_NULL_HANDLE))
+    , GraphicsQueueFamily(
+          std::exchange(
+              other.GraphicsQueueFamily,
+              0))
+    , ComputeQueue(
+          std::exchange(
+              other.ComputeQueue,
+              VK_NULL_HANDLE))
+    , ComputeQueueFamily(
+          std::exchange(
+              other.ComputeQueueFamily,
+              0))
+    , Allocator(
+          std::exchange(
+              other.Allocator,
+              VK_NULL_HANDLE))
+    , vkbInstance(
+          std::move(other.vkbInstance))
+    , vkbDevice(
+          std::move(other.vkbDevice))
 {
-    Instance = other.Instance;
-    PhysicalDevice = other.PhysicalDevice;
-    LogicalDevice = other.LogicalDevice;
-    GraphicsQueue = other.GraphicsQueue;
-    GraphicsQueueFamily = other.GraphicsQueueFamily;
-    ComputeQueue = other.ComputeQueue;
-    ComputeQueueFamily = other.ComputeQueueFamily;
-    Allocator = other.Allocator;
-
-    vkbInstance = std::move(other.vkbInstance);
-    vkbDevice = std::move(other.vkbDevice);
-
-    vkGetInstanceProcAddr = other.vkGetInstanceProcAddr;
-
-    other.Instance = VK_NULL_HANDLE;
-    other.PhysicalDevice = VK_NULL_HANDLE;
-    other.LogicalDevice = VK_NULL_HANDLE;
-    other.GraphicsQueue = VK_NULL_HANDLE;
-    other.GraphicsQueueFamily = 0;
-    other.ComputeQueue = VK_NULL_HANDLE;
-    other.ComputeQueueFamily = 0;
-    other.Allocator = VK_NULL_HANDLE;
-    other.vkGetInstanceProcAddr = nullptr;
 }
 
-Device& Device::operator=(Device&& other) noexcept
+Device& Device::operator=(
+    Device&& other) noexcept
 {
-    if (this == &other) {
+    if (this == &other)
         return *this;
-    }
+
     Destroy();
 
-    Instance = other.Instance;
-    PhysicalDevice = other.PhysicalDevice;
-    LogicalDevice = other.LogicalDevice;
-    GraphicsQueue = other.GraphicsQueue;
-    GraphicsQueueFamily = other.GraphicsQueueFamily;
-    ComputeQueue = other.ComputeQueue;
-    ComputeQueueFamily = other.ComputeQueueFamily;
-    Allocator = other.Allocator;
+    vkGetInstanceProcAddr = std::exchange(
+        other.vkGetInstanceProcAddr,
+        nullptr);
+
+    Instance = std::exchange(
+        other.Instance,
+        VK_NULL_HANDLE);
+
+    PhysicalDevice = std::exchange(
+        other.PhysicalDevice,
+        VK_NULL_HANDLE);
+
+    LogicalDevice = std::exchange(
+        other.LogicalDevice,
+        VK_NULL_HANDLE);
+
+    GraphicsQueue = std::exchange(
+        other.GraphicsQueue,
+        VK_NULL_HANDLE);
+
+    GraphicsQueueFamily = std::exchange(
+        other.GraphicsQueueFamily,
+        0);
+
+    ComputeQueue = std::exchange(
+        other.ComputeQueue,
+        VK_NULL_HANDLE);
+
+    ComputeQueueFamily = std::exchange(
+        other.ComputeQueueFamily,
+        0);
+
+    Allocator = std::exchange(
+        other.Allocator,
+        VK_NULL_HANDLE);
 
     vkbInstance = std::move(other.vkbInstance);
+
     vkbDevice = std::move(other.vkbDevice);
-
-    vkGetInstanceProcAddr = other.vkGetInstanceProcAddr;
-
-    other.Instance = VK_NULL_HANDLE;
-    other.PhysicalDevice = VK_NULL_HANDLE;
-    other.LogicalDevice = VK_NULL_HANDLE;
-    other.GraphicsQueue = VK_NULL_HANDLE;
-    other.GraphicsQueueFamily = 0;
-    other.ComputeQueue = VK_NULL_HANDLE;
-    other.ComputeQueueFamily = 0;
-    other.Allocator = VK_NULL_HANDLE;
-    other.vkGetInstanceProcAddr = nullptr;
 
     return *this;
 }
