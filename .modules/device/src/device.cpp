@@ -104,7 +104,7 @@ std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config)
                             .require_present(config.RequirePresent);
 
     std::vector<const char*> requiredExts;
-    if (config.DeviceExtensions.empty()) {
+    if (config.DeviceExtensions.empty() && config.RequirePresent) {
         requiredExts.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     } else {
         requiredExts = config.DeviceExtensions;
