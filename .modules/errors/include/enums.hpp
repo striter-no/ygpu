@@ -38,6 +38,7 @@ enum class ErrorCode : int {
     VmaAllocatorCreationFailed = 204,
     UnsupportedBackend = 205,
     MissingRequiredDeviceExtension = 206,
+    ComputeQueueNotFound = 207,
 
     // ---- Swapchain (yst::core) ----------------------------------------
     SurfaceCreationFailed = 300,

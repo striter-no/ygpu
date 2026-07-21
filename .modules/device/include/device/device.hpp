@@ -23,6 +23,8 @@ public:
     VkDevice LogicalDevice = VK_NULL_HANDLE;
     VkQueue GraphicsQueue = VK_NULL_HANDLE;
     uint32_t GraphicsQueueFamily = 0;
+    VkQueue ComputeQueue = VK_NULL_HANDLE;
+    uint32_t ComputeQueueFamily = 0;
     VmaAllocator Allocator = VK_NULL_HANDLE;
 
     vkb::Instance vkbInstance;

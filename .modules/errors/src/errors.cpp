@@ -28,6 +28,8 @@ const char* ErrorName(int code)
         return "LogicalDeviceCreationFailed";
     case ErrorCode::GraphicsQueueNotFound:
         return "GraphicsQueueNotFound";
+    case ErrorCode::ComputeQueueNotFound:
+        return "ComputeQueueNotFound";
     case ErrorCode::VmaAllocatorCreationFailed:
         return "VmaAllocatorCreationFailed";
     case ErrorCode::UnsupportedBackend:

@@ -173,6 +173,26 @@ std::pair<Device, CustomError> CreateDevice(const DeviceConfig& config)
     outDevice.GraphicsQueue = graphicsQueue_ret.value();
     outDevice.GraphicsQueueFamily = graphicsQueueFam_ret.value();
 
+    // 5.2. Compute queue.
+    auto computeQueueResult = outDevice.vkbDevice.get_queue(
+        vkb::QueueType::compute);
+
+    auto computeFamilyResult = outDevice.vkbDevice.get_queue_index(
+        vkb::QueueType::compute);
+
+    if (!computeQueueResult || !computeFamilyResult) {
+        return {
+            std::move(outDevice),
+            CustomError(
+                ErrorCode::ComputeQueueNotFound,
+                "Failed to get compute queue")
+        };
+    }
+
+    outDevice.ComputeQueue = computeQueueResult.value();
+
+    outDevice.ComputeQueueFamily = computeFamilyResult.value();
+
     // 6. VMA allocator.
     VmaVulkanFunctions vulkanFunctions = {};
     vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
@@ -225,7 +245,11 @@ Device::Device(Device&& other) noexcept
     vkbInstance = other.vkbInstance;
     vkbDevice = other.vkbDevice;
     vkGetInstanceProcAddr = other.vkGetInstanceProcAddr;
+    ComputeQueue = other.ComputeQueue;
+    ComputeQueueFamily = other.ComputeQueueFamily;
 
+    other.ComputeQueue = VK_NULL_HANDLE;
+    other.ComputeQueueFamily = 0;
     other.Instance = VK_NULL_HANDLE;
     other.PhysicalDevice = VK_NULL_HANDLE;
     other.LogicalDevice = VK_NULL_HANDLE;
@@ -250,7 +274,11 @@ Device& Device::operator=(Device&& other) noexcept
     vkbInstance = other.vkbInstance;
     vkbDevice = other.vkbDevice;
     vkGetInstanceProcAddr = other.vkGetInstanceProcAddr;
+    ComputeQueue = other.ComputeQueue;
+    ComputeQueueFamily = other.ComputeQueueFamily;
 
+    other.ComputeQueue = VK_NULL_HANDLE;
+    other.ComputeQueueFamily = 0;
     other.Instance = VK_NULL_HANDLE;
     other.PhysicalDevice = VK_NULL_HANDLE;
     other.LogicalDevice = VK_NULL_HANDLE;
