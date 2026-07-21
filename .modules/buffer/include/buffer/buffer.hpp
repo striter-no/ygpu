@@ -17,11 +17,16 @@ class Buffer;
 
 /// Named presets for fast, common BufferConfig defaults.
 enum class BufferPreset {
-    Empty = 0,
+    Empty,
     Uniform,
     Vertex,
     Index,
-    Staging,
+
+    Upload,
+    Readback,
+
+    // Temporal, deprecated
+    Staging = Upload,
 };
 
 /// Plain data configuration for a buffer. Callers may use CreateConfig(preset)
@@ -133,7 +138,19 @@ public:
     Buffer& operator=(Buffer&& other) noexcept;
 
     void Destroy();
+
+    [[deprecated("Use Write/Read methods")]]
     CustomError UploadData(const void* data, size_t dataSize);
+
+    CustomError Write(
+        const void* data,
+        VkDeviceSize dataSize,
+        VkDeviceSize offset = 0);
+
+    CustomError Read(
+        void* destination,
+        VkDeviceSize dataSize,
+        VkDeviceSize offset = 0);
 
     bool IsMapped() const noexcept { return mappedData_ != nullptr; }
     void* MappedData() noexcept { return mappedData_; }

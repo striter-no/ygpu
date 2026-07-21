@@ -60,6 +60,8 @@ enum class ErrorCode : int {
     BufferCreationFailed = 500,
     BufferNotHostVisible = 501,
     BufferSizeExceeded = 502,
+    BufferUploadFailed = 503,
+    BufferDownloadFailed = 504,
 
     // ---- Pipeline (yst::core) -----------------------------------------
     ShaderModuleCreationFailed = 600,

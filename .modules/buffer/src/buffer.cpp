@@ -24,10 +24,16 @@ BufferConfig CreateConfig(BufferPreset preset)
         cfg.Usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
         return cfg;
 
-    case BufferPreset::Staging:
+    case BufferPreset::Upload:
         cfg.Usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-        cfg.AllocationFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
-            | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        cfg.AllocationFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        cfg.HostVisible = true;
+        return cfg;
+
+    case BufferPreset::Readback:
+        cfg.Usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        cfg.AllocationFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        cfg.PreferredMemoryFlags = VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
         cfg.HostVisible = true;
         return cfg;
 
@@ -36,7 +42,6 @@ BufferConfig CreateConfig(BufferPreset preset)
         return cfg;
     }
 }
-
 
 Buffer::Buffer(Buffer&& other) noexcept
 {
@@ -144,5 +149,80 @@ CustomError Buffer::UploadData(const void* data, size_t dataSize)
     return CustomError();
 }
 
-} // namespace yst::core
+CustomError Buffer::Write(
+    const void* data,
+    VkDeviceSize dataSize,
+    VkDeviceSize offset)
+{
+    if (!mappedData_) {
+        return CustomError(
+            ErrorCode::BufferNotHostVisible,
+            "Buffer is not mapped");
+    }
 
+    if (offset > size_ || dataSize > size_ - offset) {
+        return CustomError(
+            ErrorCode::BufferSizeExceeded,
+            "Write range exceeds buffer capacity");
+    }
+
+    auto* destination = static_cast<std::byte*>(mappedData_) + offset;
+
+    std::memcpy(
+        destination,
+        data,
+        static_cast<std::size_t>(dataSize));
+
+    if (vmaFlushAllocation(
+            device_->Allocator,
+            allocation_,
+            offset,
+            dataSize)
+        != VK_SUCCESS) {
+        return CustomError(
+            ErrorCode::BufferUploadFailed,
+            "Failed to flush mapped buffer");
+    }
+
+    return {};
+}
+
+CustomError Buffer::Read(
+    void* destination,
+    VkDeviceSize dataSize,
+    VkDeviceSize offset)
+{
+    if (!mappedData_) {
+        return CustomError(
+            ErrorCode::BufferNotHostVisible,
+            "Buffer is not mapped");
+    }
+
+    if (offset > size_ || dataSize > size_ - offset) {
+        return CustomError(
+            ErrorCode::BufferSizeExceeded,
+            "Read range exceeds buffer capacity");
+    }
+
+    if (vmaInvalidateAllocation(
+            device_->Allocator,
+            allocation_,
+            offset,
+            dataSize)
+        != VK_SUCCESS) {
+        return CustomError(
+            ErrorCode::BufferDownloadFailed,
+            "Failed to invalidate mapped buffer");
+    }
+
+    const auto* source = static_cast<const std::byte*>(mappedData_) + offset;
+
+    std::memcpy(
+        destination,
+        source,
+        static_cast<std::size_t>(dataSize));
+
+    return {};
+}
+
+} // namespace yst::core

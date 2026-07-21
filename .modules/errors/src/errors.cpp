@@ -72,6 +72,10 @@ const char* ErrorName(int code)
         return "BufferNotHostVisible";
     case ErrorCode::BufferSizeExceeded:
         return "BufferSizeExceeded";
+    case ErrorCode::BufferDownloadFailed:
+        return "BufferDownloadFailed";
+    case ErrorCode::BufferUploadFailed:
+        return "BufferUploadFailed";
 
     // Pipeline
     case ErrorCode::ShaderModuleCreationFailed:
