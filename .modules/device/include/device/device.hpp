@@ -16,7 +16,7 @@ namespace yst::core {
 
 class Device {
 public:
-    PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr;
+    PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = nullptr;
 
     VkInstance Instance = VK_NULL_HANDLE;
     VkPhysicalDevice PhysicalDevice = VK_NULL_HANDLE;
@@ -27,8 +27,8 @@ public:
     uint32_t ComputeQueueFamily = 0;
     VmaAllocator Allocator = VK_NULL_HANDLE;
 
-    vkb::Instance vkbInstance;
-    vkb::Device vkbDevice;
+    vkb::Instance vkbInstance {};
+    vkb::Device vkbDevice {};
 
     Device() = default;
     ~Device();

@@ -46,7 +46,7 @@ enum class BindGroupPreset {
 /// Configuration for a BindGroup: a layout + the actual resources bound
 /// to each slot.
 struct BindGroupConfig {
-    BindGroupLayout* Layout = nullptr;
+    const BindGroupLayout* Layout = nullptr;
     std::vector<BindGroupEntry> Entries;
 };
 
@@ -64,7 +64,8 @@ public:
     {
     }
 
-    BindGroupBuilder& WithLayout(BindGroupLayout& layout)
+    BindGroupBuilder& WithLayout(
+        const BindGroupLayout& layout)
     {
         cfg_.Layout = &layout;
         return *this;
@@ -132,7 +133,7 @@ private:
 class BindGroup {
 public:
     VkDescriptorSet set = VK_NULL_HANDLE;
-    BindGroupLayout* layout = nullptr;
+    const BindGroupLayout* layout = nullptr;
 
     BindGroup() = default;
 
@@ -154,7 +155,6 @@ std::pair<BindGroup, CustomError> CreateBindGroup(
 /// is expected to call BindGroup::Update() afterwards. Useful when the
 /// resources aren't known at allocation time.
 std::pair<BindGroup, CustomError> AllocateBindGroup(
-    Device& device, DescriptorPool& pool, BindGroupLayout& layout);
+    Device& device, DescriptorPool& pool, const BindGroupLayout& layout);
 
 } // namespace yst::core
-

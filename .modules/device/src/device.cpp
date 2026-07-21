@@ -241,21 +241,24 @@ Device::Device(Device&& other) noexcept
     LogicalDevice = other.LogicalDevice;
     GraphicsQueue = other.GraphicsQueue;
     GraphicsQueueFamily = other.GraphicsQueueFamily;
-    Allocator = other.Allocator;
-    vkbInstance = other.vkbInstance;
-    vkbDevice = other.vkbDevice;
-    vkGetInstanceProcAddr = other.vkGetInstanceProcAddr;
     ComputeQueue = other.ComputeQueue;
     ComputeQueueFamily = other.ComputeQueueFamily;
+    Allocator = other.Allocator;
 
-    other.ComputeQueue = VK_NULL_HANDLE;
-    other.ComputeQueueFamily = 0;
+    vkbInstance = std::move(other.vkbInstance);
+    vkbDevice = std::move(other.vkbDevice);
+
+    vkGetInstanceProcAddr = other.vkGetInstanceProcAddr;
+
     other.Instance = VK_NULL_HANDLE;
     other.PhysicalDevice = VK_NULL_HANDLE;
     other.LogicalDevice = VK_NULL_HANDLE;
     other.GraphicsQueue = VK_NULL_HANDLE;
     other.GraphicsQueueFamily = 0;
+    other.ComputeQueue = VK_NULL_HANDLE;
+    other.ComputeQueueFamily = 0;
     other.Allocator = VK_NULL_HANDLE;
+    other.vkGetInstanceProcAddr = nullptr;
 }
 
 Device& Device::operator=(Device&& other) noexcept
@@ -270,21 +273,24 @@ Device& Device::operator=(Device&& other) noexcept
     LogicalDevice = other.LogicalDevice;
     GraphicsQueue = other.GraphicsQueue;
     GraphicsQueueFamily = other.GraphicsQueueFamily;
-    Allocator = other.Allocator;
-    vkbInstance = other.vkbInstance;
-    vkbDevice = other.vkbDevice;
-    vkGetInstanceProcAddr = other.vkGetInstanceProcAddr;
     ComputeQueue = other.ComputeQueue;
     ComputeQueueFamily = other.ComputeQueueFamily;
+    Allocator = other.Allocator;
 
-    other.ComputeQueue = VK_NULL_HANDLE;
-    other.ComputeQueueFamily = 0;
+    vkbInstance = std::move(other.vkbInstance);
+    vkbDevice = std::move(other.vkbDevice);
+
+    vkGetInstanceProcAddr = other.vkGetInstanceProcAddr;
+
     other.Instance = VK_NULL_HANDLE;
     other.PhysicalDevice = VK_NULL_HANDLE;
     other.LogicalDevice = VK_NULL_HANDLE;
     other.GraphicsQueue = VK_NULL_HANDLE;
     other.GraphicsQueueFamily = 0;
+    other.ComputeQueue = VK_NULL_HANDLE;
+    other.ComputeQueueFamily = 0;
     other.Allocator = VK_NULL_HANDLE;
+    other.vkGetInstanceProcAddr = nullptr;
 
     return *this;
 }

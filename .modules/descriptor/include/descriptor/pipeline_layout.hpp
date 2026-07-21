@@ -14,8 +14,12 @@ enum class PipelineLayoutPreset {
 };
 
 struct PipelineLayoutConfig {
-    std::vector<BindGroupLayout*> BindGroupLayouts;
-    std::vector<VkPushConstantRange> PushConstantRanges;
+    std::vector<const BindGroupLayout*>
+        BindGroupLayouts;
+
+    std::vector<VkPushConstantRange>
+        PushConstantRanges;
+
     VkPipelineLayoutCreateFlags Flags = 0;
 };
 
@@ -33,11 +37,14 @@ public:
     {
     }
 
-    PipelineLayoutBuilder& AddBindGroupLayout(BindGroupLayout& layout)
+    PipelineLayoutBuilder& AddBindGroupLayout(const BindGroupLayout& layout)
     {
-        cfg_.BindGroupLayouts.push_back(&layout);
+        cfg_.BindGroupLayouts.push_back(
+            &layout);
+
         return *this;
     }
+
     PipelineLayoutBuilder& AddPushConstantRange(const VkPushConstantRange& range)
     {
         cfg_.PushConstantRanges.push_back(range);

@@ -11,7 +11,7 @@
   "code": {
     "sources": ["*.cpp"],
     "includes": ["include"],
-    "libraries": []
+    "libraries": ["shaderc_combined", "glslang" ,"SPIRV" ,"SPIRV-Tools" ,"SPIRV-Tools-opt", "MachineIndependent" ,"GenericCodeGen" ,"OSDependent"]
   },
 
   "dependencies": {

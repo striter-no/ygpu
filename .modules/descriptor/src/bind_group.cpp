@@ -172,43 +172,65 @@ CustomError BindGroup::Update(Device& device, const BindGroupConfig& config)
 }
 
 std::pair<BindGroup, CustomError> AllocateBindGroup(
-    Device& device, DescriptorPool& pool, BindGroupLayout& layout)
+    Device& device,
+    DescriptorPool& pool,
+    const BindGroupLayout& layout)
 {
     BindGroup out;
     out.layout = &layout;
 
     if (pool.pool == VK_NULL_HANDLE) {
-        return { std::move(out),
-            CustomError(ErrorCode::DescriptorPoolExhausted,
-                "DescriptorPool is null") };
+        return {
+            std::move(out),
+            CustomError(
+                ErrorCode::DescriptorPoolExhausted,
+                "DescriptorPool is null")
+        };
     }
+
     if (layout.layout == VK_NULL_HANDLE) {
-        return { std::move(out),
-            CustomError(ErrorCode::DescriptorSetLayoutCreationFailed,
-                "BindGroupLayout is null") };
+        return {
+            std::move(out),
+            CustomError(
+                ErrorCode::DescriptorSetLayoutCreationFailed,
+                "BindGroupLayout is null")
+        };
     }
 
     VkDescriptorSetAllocateInfo info {};
     info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+
     info.descriptorPool = pool.pool;
     info.descriptorSetCount = 1;
     info.pSetLayouts = &layout.layout;
 
-    const VkResult res = vkAllocateDescriptorSets(
-        device.LogicalDevice, &info, &out.set);
+    const VkResult result = vkAllocateDescriptorSets(
+        device.LogicalDevice,
+        &info,
+        &out.set);
 
-    if (res == VK_ERROR_OUT_OF_POOL_MEMORY || res == VK_ERROR_FRAGMENTED_POOL) {
-        return { std::move(out),
-            CustomError(ErrorCode::DescriptorPoolExhausted,
-                "Descriptor pool exhausted or fragmented") };
-    }
-    if (res != VK_SUCCESS) {
-        return { std::move(out),
-            CustomError(ErrorCode::DescriptorSetAllocationFailed,
-                "Failed to allocate descriptor set") };
+    if (result == VK_ERROR_OUT_OF_POOL_MEMORY || result == VK_ERROR_FRAGMENTED_POOL) {
+        return {
+            std::move(out),
+            CustomError(
+                ErrorCode::DescriptorPoolExhausted,
+                "Descriptor pool exhausted or fragmented")
+        };
     }
 
-    return { std::move(out), CustomError() };
+    if (result != VK_SUCCESS) {
+        return {
+            std::move(out),
+            CustomError(
+                ErrorCode::DescriptorSetAllocationFailed,
+                "Failed to allocate descriptor set")
+        };
+    }
+
+    return {
+        std::move(out),
+        CustomError()
+    };
 }
 
 std::pair<BindGroup, CustomError> CreateBindGroup(
@@ -233,4 +255,3 @@ std::pair<BindGroup, CustomError> CreateBindGroup(
 }
 
 } // namespace yst::core
-
