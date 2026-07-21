@@ -16,6 +16,11 @@ namespace yst::core {
 
 class Device {
 public:
+    std::size_t GetCompiledDeviceSize() noexcept
+    {
+        return sizeof(Device);
+    }
+
     PFN_vkGetInstanceProcAddr
         vkGetInstanceProcAddr
         = nullptr;
